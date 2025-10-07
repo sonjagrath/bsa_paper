@@ -67,9 +67,9 @@ install.packages(c(
 ./create_project_folders.sh
 ```
 
-- Place all raw input files in data/raw/.
+- Place all raw input files in `data/raw/`.
 
-- Ensure intermediate files, such as sigQTL.csv, are in data/processed/.
+- Ensure intermediate files, such as `sigQTL.csv`, are in `data/processed/`.
 
 ## Running the Pipeline
 
@@ -80,17 +80,17 @@ source("scripts/run_pipeline.R")
 ```
 This executes the following steps in order:
 
-1. QTLseq analysis (01_QTLseq_Analysis.R)
+1. QTLseq analysis (`01_QTLseq_Analysis.R`)
 
-2. QTL annotation and GO enrichment (02_QTL_Annotation_and_GO_Enrichment.R)
+2. QTL annotation and GO enrichment (`02_QTL_Annotation_and_GO_Enrichment.R`)
 
-3. Supplementary tables and reports generation (03_Supplementary_Tables_and_Reports.R)
+3. Supplementary tables and reports generation (`03_Supplementary_Tables_and_Reports.R`)
 
-All results will be saved in the results/ directory.
+All results will be saved in the `results/` directory.
 
 ## Outputs
 
-- Plots: results/plots/
+- Plots: `results/plots/`
 
   - QTL maps
 
@@ -98,9 +98,9 @@ All results will be saved in the results/ directory.
 
   - GO enrichment bar and dot plots
 
-- GO enrichment tables: results/enrichment/
+- GO enrichment tables: `results/enrichment/`
 
-- Supplementary tables: results/supplementary_tables/
+- Supplementary tables: `results/supplementary_tables/`
 
   - Excel sheets for gene IDs
 
@@ -122,7 +122,7 @@ All results will be saved in the results/ directory.
 
 > **Dissecting Cold Tolerance in *Drosophila ananassae***
 > 
-> *Yilmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*. *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
+> *Yılmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*. *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
 
 ## License
 
