@@ -16,6 +16,7 @@ If you use this pipeline, please cite:
 > **Dissecting Cold Tolerance in *Drosophila ananassae***
 > 
 > *Yılmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*.
+> 
 > *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
 
 ---
