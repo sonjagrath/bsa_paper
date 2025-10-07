@@ -1,4 +1,4 @@
-# Drosophila ananassae Bulk-Segregant Analysis
+# Bulk-Segregant Analysis for Cold Tolerance in _Drosophila ananassae_
 
 [![R](https://img.shields.io/badge/R-%3E%3D4.1-blue.svg)](https://www.r-project.org/) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -57,7 +57,7 @@ project_root/
 1. Clone the repository:
    
 ```bash
-git clone https://github.com/sonjagrath/qtl_analysis.git
+git clone https://github.com/sonjagrath/bsa_paper.git
 ```
 2. Run the `_install_packages.R` script to ensure all required R packages are installed:
 
