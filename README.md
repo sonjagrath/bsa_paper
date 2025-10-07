@@ -1,15 +1,21 @@
-# qtl_analysis
+# Drosophila ananassae Bulk-Segregant Analysis
 
 [![R](https://img.shields.io/badge/R-%3E%3D4.1-blue.svg)](https://www.r-project.org/) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+## About
 
-This project performs QTL analysis and Gene Ontology (GO) enrichment in *Drosophila*. The pipeline is fully automated and reproducible, including:
+This repository contains the complete workflow for QTL-seq analysis of *Drosophila ananassae*. It includes data processing, QTL identification, gene annotation, GO enrichment analysis, and generation of publication-ready tables and plots. All scripts are modular and reproducible, supporting the analysis presented in the associated manuscript.
 
-1. **QTLseq analysis** on sequencing data.  
-2. **Annotation and GO enrichment** of significant regions.  
-3. **Generation of supplementary tables and plots** for publications.
+---
+
+## Citation
+
+If you use this pipeline, please cite:
+
+> **Dissecting Cold Tolerance in *Drosophila ananassae***
+> 
+> *Yılmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*. *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
 
 ---
 
@@ -29,7 +35,7 @@ project_root/
 │ └── processed/ # Intermediate processed files
 │ └── sigQTL.csv
 ├── results/
-│ ├── plots/ # Plots (QTL maps, GO enrichment)
+│ ├── plots/ # QTL maps, GO enrichment plots
 │ ├── enrichment/ # GO enrichment results
 │ └── supplementary_tables/ # Tables for publication
 ├── objects/ # R objects / intermediate RDS files
@@ -37,58 +43,51 @@ project_root/
 │ ├── 01_QTLseq_Analysis.R
 │ ├── 02_QTL_Annotation_and_GO_Enrichment.R
 │ ├── 03_Supplementary_Tables_and_Reports.R
+│ ├── _install_packages.R # Helper script to install required R packages
+│ ├── _save_objects.R # Helper script to save R objects
 │ └── run_pipeline.R # Master script to run the pipeline
-├── create_project_folders.sh # Shell script to create folder structure
+├── setup_project.sh # Shell script to create folder structure
 └── README.md
 ```
-
 
 ---
 
 ## Installation
 
-The pipeline requires **R ≥ 4.1** and the following packages:
+1. Clone the repository:
+   
+```bash
+git clone https://github.com/sonjagrath/qtl_analysis.git
+```
+2. Run the `_install_packages.R` script to ensure all required R packages are installed:
 
 ```r
-install.packages(c(
-  "vcfR", "QTLseqr", "dplyr", "tidyr", "readr", "readxl", 
-  "ggplot2", "ggpubr", "GenomicRanges", "rtracklayer", 
-  "AnnotationDbi", "org.Dm.eg.db", "clusterProfiler", 
-  "enrichR", "openxlsx", "writexl", "kableExtra", "knitr"
-))
+source("scripts/_install_packages.R")
 ```
-## Setup
+   
+---
 
-- Clone or download the repository.
-
-- Create folder structure:
-
-```chmod +x create_project_folders.sh
-./setup_project.sh
-```
-
-- Place all raw input files in `data/raw/`.
-
-- Ensure intermediate files, such as `sigQTL.csv`, are in `data/processed/`.
-
-## Running the Pipeline
-
-From the project root, launch R and run:
+## Usage
 
 ```r
 source("scripts/run_pipeline.R")
 ```
-This executes the following steps in order:
 
-1. QTLseq analysis (`01_QTLseq_Analysis.R`)
+This will:
 
-2. QTL annotation and GO enrichment (`02_QTL_Annotation_and_GO_Enrichment.R`)
+- Process raw data files
 
-3. Supplementary tables and reports generation (`03_Supplementary_Tables_and_Reports.R`)
+- Perform QTL-seq and G' analysis
 
-All results will be saved in the `results/` directory.
+- Annotate significant QTL regions
 
-## Outputs
+- Run GO enrichment analysis
+
+- Generate publication-ready plots and tables
+
+- Save all intermediate R objects in `objects/`
+
+## Output
 
 - Plots: `results/plots/`
 
@@ -108,11 +107,7 @@ All results will be saved in the `results/` directory.
 
   - Raw sequencing QC tables
 
-## Citation
 
-> **Dissecting Cold Tolerance in *Drosophila ananassae***
-> 
-> *Yılmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*. *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
 
 ## License
 
