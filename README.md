@@ -13,9 +13,9 @@ This repository contains the complete workflow for QTL-seq analysis of *Drosophi
 
 If you use this pipeline, please cite:
 
-> **Dissecting Cold Tolerance in *Drosophila ananassae***
+> **Dissecting Cold Tolerance in *Drosophila ananassae*: A Multi-Phenotypic and Bulk Segregant Analysis**
 > 
-> *Yılmaz VM, Kara FT, Grath S*. (2025). Dissecting Cold Tolerance in *Drosophila ananassae*.
+> *Yılmaz VM, Kara FT, Grath S*. (2025). 
 > 
 > *bioRxiv*. https://doi.org/10.1101/2025.04.23.650207v1
 
