@@ -64,7 +64,7 @@ install.packages(c(
 - Create folder structure:
 
 ```chmod +x create_project_folders.sh
-./create_project_folders.sh
+./setup_project.sh
 ```
 
 - Place all raw input files in `data/raw/`.
