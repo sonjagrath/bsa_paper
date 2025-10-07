@@ -108,16 +108,6 @@ All results will be saved in the `results/` directory.
 
   - Raw sequencing QC tables
 
-## Notes
-
-- All file paths are relative to the project root for portability.
-
-- The pipeline checks for missing input files and will stop with an informative error if any required file is missing.
-
-- Variable and file names have been standardized for professionalism; _tubi references have been removed.
-
-- The scripts are modular and can be run independently if needed.
-
 ## Citation
 
 > **Dissecting Cold Tolerance in *Drosophila ananassae***
