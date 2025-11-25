@@ -1,0 +1,7 @@
+VCF Files,# All Variant Records,# SNPs,# MNPs,# Indels,# Others,# Multiallelic Sites,# Multiallelic SNP Sites
+Fast Offspring Original File,3172272,2496059,356021,268855,171683,201331,44567
+Fast Offspring Filtered File,1363374,1074337,154048,119422,62072,66120,3597
+Fast Offspring Filtered File - Only Chromosomes,1341255,1057337,151516,117641,61013,65750,3581
+Slow Offspring Original File,3175067,2510949,351954,262239,166479,197669,47368
+Slow Offspring Filtered File,1159535,935287,127275,88458,43959,48888,2966
+Slow Offspring Filtered File - Only Chromosomes,1143997,923296,125331,87386,43267,48660,2954
