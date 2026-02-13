@@ -35,11 +35,9 @@ if(!requireNamespace("pak", quietly = TRUE)){
 }
 
 # Install missing dependencies
-missing_pkgs <- required_packages[!required_packages %in% rownames(installed.packages())]
-
-if (length(missing_pkgs) > 0) {
-  pak::pkg_install(missing_pkgs)
-} else {}
+if (any(pak::pkg_status(required_packages)$diff != "OK")) {
+  pak::pkg_install(required_packages)
+}
 
 # Load all required packages
 required_packages[length(required_packages)] <- "QTLseqr"
@@ -47,3 +45,7 @@ invisible(lapply(required_packages, library, character.only = TRUE))
 
 message("✅   All required packages are installed and loaded.")
 
+# remove handling objects
+rm(required_packages)
+
+###EOF

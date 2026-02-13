@@ -7,19 +7,11 @@
 source(file.path("scripts", "_install_packages.R"))
 source(file.path("scripts", "_save_objects.R"))
 
-library(vcfR)
-library(QTLseqr)
-library(dplyr)
-library(tidyr)
-library(readr)
-library(ggplot2)
-library(ggpubr)
-
 # ---- 2. Load input data ----
-pool_Tolerant_Offspring <- read_tsv(file.path("data", "fast_O.table"))
-pool_Sensitive_Offspring <- read_tsv(file.path("data", "slow_O.table"))
-pool_Tolerant_Parent <- read_tsv(file.path("data", "fast_P.table"))
-pool_Sensitive_Parent <- read_tsv(file.path("data", "slow_P.table"))
+pool_Tolerant_Offspring <- read_tsv(file.path("data", "raw", "fast_O.table"))
+pool_Sensitive_Offspring <- read_tsv(file.path("data", "raw", "slow_O.table"))
+pool_Tolerant_Parent <- read_tsv(file.path("data", "raw", "fast_P.table"))
+pool_Sensitive_Parent <- read_tsv(file.path("data", "raw", "slow_P.table"))
 
 # ---- 3. Rename columns for clarity ----
 rename_columns <- function(df, prefix) {
@@ -45,36 +37,75 @@ HighBulk <- "TolerantOffspring"
 LowBulk <- "SensitiveOffspring"
 
 # ---- 6. Import SNP data ----
-df <- importFromGATK(file = file, highBulk = HighBulk, lowBulk = LowBulk, chromList = Chroms)
+df <- QTLseqr::importFromGATK(file = file, highBulk = HighBulk, 
+                     lowBulk = LowBulk, chromList = Chroms)
 
 # ---- 7. Visualize depth and allele frequency distributions ----
-ggplot(df) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + theme_minimal() + xlim(0, 1000)
-ggplot(df) + geom_histogram(aes(x = REF_FRQ)) + theme_minimal()
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+out_pdf <- file.path("results", "plots", 
+                     paste0("01_qtlseq_plots_", timestamp, ".pdf"))
+pdf(out_pdf)
+
+ggplot(df) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
+  theme_minimal() + 
+  xlim(0, 1000) +
+  ggtitle("Distribution of total read depth per SNP (DP.HIGH + DP.LOW)")
+ggplot(df) + geom_histogram(aes(x = REF_FRQ)) + 
+  theme_minimal()+
+  ggtitle("Overall reference allele frequency across bulks (REF_FRQ)")
 
 # ---- 8. Filter SNPs ----
-df_filt <- filterSNPs(SNPset = df, refAlleleFreq = 0.20, depthDifference = 100, maxTotalDepth = 400, verbose = TRUE)
+df_filt <- filterSNPs(SNPset = df, 
+                      refAlleleFreq = 0.20, 
+                      depthDifference = 100, 
+                      maxTotalDepth = 400, 
+                      verbose = TRUE)
 df_nona <- na.omit(df_filt)
 
 # ---- 9. Visualize filtered data ----
-ggplot(df_nona) + geom_histogram(aes(x = REF_FRQ)) + theme_minimal()
-ggplot(df_nona) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + theme_minimal() + xlim(0, 1000)
-ggplot(df_nona) + geom_histogram(aes(x = SNPindex.HIGH)) + theme_minimal()
-ggplot(df_nona) + geom_histogram(aes(x = SNPindex.LOW)) + theme_minimal()
+ggplot(df_nona) + geom_histogram(aes(x = REF_FRQ)) + 
+  theme_minimal()+
+  ggtitle("Reference allele frequency after filtering")
+ggplot(df_nona) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
+  theme_minimal() + 
+  xlim(0, 1000)+
+  ggtitle("Total read depth after filtering")
+ggplot(df_nona) + geom_histogram(aes(x = SNPindex.HIGH)) + 
+  theme_minimal()+
+  ggtitle("Alternative allele frequency in the HIGH bulk (SNP-index)")
+ggplot(df_nona) + geom_histogram(aes(x = SNPindex.LOW)) + 
+  theme_minimal()+
+  ggtitle("Alternative allele frequency in the LOW bulk (SNP-index)")
 
 # ---- 10. Run QTLseq and G' analyses ----
-qtl_results <- runQTLseqAnalysis(df_nona, windowSize = 1e6, popStruc = "RIL", bulkSize = 100, replications = 1e6, intervals = c(95, 99))
+chromosomes <- c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR")
+
+qtl_results <- QTLseqr::runQTLseqAnalysis(df_nona, 
+                                 windowSize = 1e6, 
+                                 popStruc = "RIL", 
+                                 bulkSize = 100, 
+                                 replications = 1e6, 
+                                 intervals = c(95, 99))
 qtl_results$CHROM <- factor(qtl_results$CHROM,
                             levels = Chroms,
-                            labels = c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR"))
+                            labels = chromosomes)
 
-gprime_results <- runGprimeAnalysis(df_nona, windowSize = 1e6, outlierFilter = "deltaSNP", filterThreshold = 0.05)
+gprime_results <- QTLseqr::runGprimeAnalysis(df_nona, 
+                                    windowSize = 1e6, 
+                                    outlierFilter = "deltaSNP", 
+                                    filterThreshold = 0.05)
 gprime_results$CHROM <- factor(gprime_results$CHROM,
                                levels = Chroms,
-                               labels = c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR"))
+                               labels = chromosomes)
 
 # ---- 11. Plot QTL statistics ----
-plotQTLStats(qtl_results, var = "deltaSNP", plotIntervals = TRUE) + theme_minimal() + scale_color_manual(values = c("coral2", "blue"))
-plotQTLStats(qtl_results, var = "nSNPs") + theme_minimal()
+QTLseqr::plotQTLStats(qtl_results, var = "deltaSNP", plotIntervals = TRUE) + 
+  theme_minimal() + 
+  scale_color_manual(values = c("coral2", "blue"))+
+  ggtitle("Tri-cube weighted delta SNP-index")
+QTLseqr::plotQTLStats(qtl_results, var = "nSNPs") + 
+  theme_minimal() +
+  ggtitle("Distribution of SNPs used to calculate G'")
 
 # ---- 12. Significant regions ----
 sigRegions_qtl <- getSigRegions(qtl_results, method = "QTLseq")
@@ -86,3 +117,5 @@ save_object(gprime_results, "gprime_results")
 save_object(sigRegions_qtl, "sigRegions_qtl")
 save_object(sigRegions_gprime, "sigRegions_gprime")
 
+dev.off()
+###EOF
