@@ -5,46 +5,45 @@
 ##############################################
 
 required_packages <- c(
-  # Core data handling
-  "dplyr",
-  "tidyr",
-  "readr",
+  ## CRAN packages
+  "tidyverse", # Data handling and visualization
+  "ggpubr", # visualization
+  "writexl", # Import and export utilities
   "readxl",
-
-  # Statistical and genomic analysis
-  "vcfR",
-  "QTLseqr",
-  "GenomicRanges",
-  "rtracklayer",
-  "AnnotationDbi",
-  "org.Dm.eg.db",
-  "clusterProfiler",
-  "enrichR",
-
-  # Visualization
-  "ggplot2",
-  "ggpubr",
-
-  # Table and export utilities
-  "writexl",
   "openxlsx",
-  "kableExtra",
-  "knitr"
+  "kableExtra", # Visualization of tables
+  "knitr", # Report generation
+  "vcfR", # manipulation of variant call format (VCF) data
+  "enrichR", # R interface to enrichr databases
+  
+  # Bioconductor packages 
+  "rtracklayer", # R interface to genome browsers
+  "AnnotationDbi", # R interface for SQLite annotations
+  "GenomicRanges", # Manipulate genomic intervals
+  "org.Dm.eg.db", # Drosophila melanogaster annotation
+  "clusterProfiler", # Analyse and visualize functional profiles
+  
+  # GitHub packages
+  "bmansfeld/QTLseqr" #  QTL mapping
 )
 
-# Function to install missing packages
-install_if_missing <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    message(paste("Installing missing package:", pkg))
-    install.packages(pkg, dependencies = TRUE)
-  }
+# Install package manager pak for installation handling
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+if(!requireNamespace("pak", quietly = TRUE)){
+  message(paste("Installing pak for library handling"))
+  install.packages("pak", dependencies = TRUE)
 }
 
-# Install missing packages
-invisible(lapply(required_packages, install_if_missing))
+# Install missing dependencies
+missing_pkgs <- required_packages[!required_packages %in% rownames(installed.packages())]
+
+if (length(missing_pkgs) > 0) {
+  pak::pkg_install(missing_pkgs)
+} else {}
 
 # Load all required packages
+required_packages[length(required_packages)] <- "QTLseqr"
 invisible(lapply(required_packages, library, character.only = TRUE))
 
-message("✅ All required packages are installed and loaded.")
+message("✅   All required packages are installed and loaded.")
 

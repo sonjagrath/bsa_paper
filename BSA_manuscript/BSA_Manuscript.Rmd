@@ -1,0 +1,492 @@
+---
+title: "BSA_Manuscript"
+author: "Vera Miyase Yilmaz"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      cache = FALSE,
+                      warning = FALSE)
+```
+
+# Bulk Segregant Analysis
+
+The aim of the analysis is to determine the variants that are related to
+chill coma recovery time (CCRT) phenotype. Four pools were used for the
+analysis: \* Tolerant parental line pool: BKK12 \* Sensitive parental
+line pool: BKK13 \* Extremely tolerant offspring pool: CCRT \< 30
+minutes \* Extremely sensitive offspring pool: CCRT \> 60 minutes
+
+100 females for each of the parental pools were collected from F2
+generation. For extreme phenotype offspring pools, the females of
+F2 generation were collected and kept at rearing temperature on standard
+corn molasses medium until they were 4-6 days old. The single flies were
+transferred into empty vials and placed on ice for 3 hours to induce
+chill coma. Then, the vials were placed back to the rearing temperature
+for recovery. The flies that were able to stand in the first 30 minutes
+were collected as extremely-fast-recovering offspring. The flies that
+were able to stand in the second 30 minutes were discarded. At the end
+of the third and the last 30 minutes, the alive flies were collected as
+the extremely-slow-recovering offspring regardless of their recovery
+state. The chill coma recovery assay was repeated until 100 flies were
+collected for each offspring pool.
+
+The flies were placed into 1.5mL eppendorf tubes in groups of 10 and
+snap-frozen in liquid nitrogen for DNA extraction. The DNA was extracted
+using MasterPure™ DNA Purification Kit (Epicentre, Madison, WI, USA).
+The DNA samples were pooled together and sent for whole genome
+sequencing to an external facility (Novogene, Cambridge, UK), which
+performed high-throughput sequencing using a Novaseq 6000 sequencer
+(Illumina, San Diego, CA, USA) to generate 150-bp paired-end reads. On
+average 62.4 million reads were generated per sample.
+
+The raw data was mapped to Drosophila ananassae genome (NCBI Drosophila
+ananassae Annotation Release 102) using the Burrows-Wheeler Aligner tool
+(version 0.5.0). Further processing -sorting, merging, duplicate
+removing- was done using samtools (version 1.18). Variant calling was
+performed using freebayes (version 1.3.8). The variants were filtered
+using bcftools (version 1.18). Finally, GATK-VariantsToTable tool was
+used to prepare the data for further analysis on R (version 4.2.2).
+
+```{r packages, include=FALSE}
+setwd('/Users/verayilmaz/Desktop/BSA')
+library(vcfR)
+library(QTLseqr)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(readxl)
+library(ggplot2)
+library(ggpubr)
+library(GenomicRanges)
+library(rtracklayer)
+library(clusterProfiler)
+library(genekitr)
+library(org.Dm.eg.db)
+library(AnnotationDbi)
+```
+
+## Import Data
+
+We import the .table files that contain the variants of each pool. These
+files were generated using GATK VariantsToTable tool. The headers of
+columns are:
+
+1.  CHROM
+
+2.  POS
+
+3.  REF
+
+4.  ALT
+
+5.  QUAL
+
+6.  DP
+
+7.  TolerantOffspring.GT
+
+8.  TolerantOffspring.AD
+
+9.  TolerantOffspring.DP
+
+10. TolerantOffspring.GQ -\> this one we do not need and therefore
+    removed from the table.
+
+We also import the tables that include the ortologous gene list and the
+REFSEQ numbers that correspond the FlyBase numbers.
+
+After removing the unwanted column, we combine the desired sample pools
+together. For parental comparison, we combine the tolerant
+(fast-recovering) and sensitive (slow-recovering) parental pools. For
+offspring comparison, we combine all the pools together, because the
+further analysis takes the parental differences into consideration and
+explains the main differences between the two extreme phenotypes.
+
+We save the new data frames into a new file with .table extension to be
+able to use it with `importFromGATK()` function
+
+```{r data, echo=FALSE}
+poolTO <- read_tsv("tolerant_offspring2.table") # tolerant offspring
+poolTO <- poolTO[,-10]
+poolTP <- read_tsv("tolerant_parent2.table") # tolerant parent
+poolTP <- poolTP[,-10]
+poolSO <- read_tsv("sensitive_offspring2.table") # sensitive offspring
+poolSO <- poolSO[,-10]
+poolSP <- read_tsv("sensitive_parent2.table") # sensitive parent
+poolSP <- poolSP[,-10]
+extracted2 <- read_tsv("REFSEQ_FLYBASE_Dana.txt")
+ortholog <- read_excel("dmel_dana_orthologs.xlsx")
+orthologs<-AnnotationDbi::select(org.Dm.eg.db,keys = ortholog$ortholog, keytype = "FLYBASE",columns = c("FLYBASE", "ENTREZID")) %>%
+  dplyr::right_join(ortholog, by = c("FLYBASE" = "ortholog"))
+annotation <- import("Dana_annotation.gtf")
+```
+
+```{r field_names, include=FALSE}
+chromosomes <- c("NC_057927.1", "NC_057928.1", "NC_057929.1", "NC_057930.1", "NC_057931.1", "NC_057932.1")
+# NC_057927.1: chromosome 2L
+# NC_057928.1: chromosome 2R
+# NC_057929.1: chromosome 3L
+# NC_057930.1: chromosome 3R
+# NC_057931.1: chromosome XL
+# NC_057932.1: chromosome XR
+### Sensitive and tolerant parents combined
+parent_pools <- dplyr::full_join(poolTP[,-5:-6], poolSP[,-5:-6])
+write_tsv(parent_pools, "parent_pools.table")
+SNPset_parent <- importFromGATK("parent_pools.table", 
+                                   highBulk = "TolerantParent", lowBulk = "SensitiveParent",
+                                   chromList = chromosomes)
+### all pools combined - offsprings are high-low bulks
+tolerant_pools <- dplyr::full_join(poolTP[,-5:-6], poolTO[,-5:-6])
+sensitive_pools <- dplyr::full_join(poolSP[,-5:-6], poolSO[,-5:-6])
+all_pools <- dplyr::full_join(tolerant_pools, sensitive_pools)
+write_tsv(all_pools, "all_pools.table")
+SNPset_all <- importFromGATK("all_pools.table", 
+                             highBulk = "TolerantOffspring", lowBulk = "SensitiveOffspring", 
+                             chromList = chromosomes)
+```
+
+## Analysis
+
+Now we perform
+
+-   the QTL analysis and generate the plots for "No of SNPs in 1Mb
+    window" and "delta-SNP index"
+    -   SNP index (∆SNP) refers to the subtraction of the alternate
+        allele frequency value of the low bulk from the high bulk (∆SNP)
+-   the G' analysis and generate the associated plots
+    -   G-statistics takes advantage of a log-likelihood statistic LOD
+        between allele frequencies
+
+### SNPset - all pools
+
+```{r}
+SNPset <- SNPset_all
+SNPset_filtered <- filterSNPs(SNPset, refAlleleFreq = 0.3, minTotalDepth = 40, maxTotalDepth = 400, depthDifference = 50, verbose = TRUE)
+SNPset_nona <- na.omit(SNPset_filtered)
+qtl <- runQTLseqAnalysis(SNPset_nona, bulkSize = 100,
+                         windowSize = 1e6, 
+                         popStruc = "RIL")
+qtl2 <- qtl
+qtl$CHROM <- factor(qtl$CHROM, levels = c("NC_057927.1", "NC_057928.1", "NC_057929.1", "NC_057930.1", "NC_057931.1", "NC_057932.1"), labels = c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR"))
+gprime <- runGprimeAnalysis(SNPset_nona, windowSize = 1e6)
+gprime2 <- gprime
+gprime$CHROM <- factor(gprime$CHROM, levels = c("NC_057927.1", "NC_057928.1", "NC_057929.1", "NC_057930.1", "NC_057931.1", "NC_057932.1"), labels = c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR"))
+```
+
+```{r all_pools, echo=FALSE, fig.height=8, fig.path="ManuscriptFigures/", fig.width=8,  dev='pdf'}
+nSNPs_plot <- plotQTLStats(qtl) + theme_minimal()
+deltaSNP_plot <- plotQTLStats(qtl, var = "deltaSNP", plotIntervals = TRUE) + theme_minimal() + theme(legend.position = "bottom") + scale_color_manual(values = c("grey", "red"))
+gprime_plot <- plotQTLStats(gprime, var = "Gprime", plotThreshold = T) + theme_minimal()
+cowplot::plot_grid(nSNPs_plot, deltaSNP_plot, gprime_plot, nrow = 3, labels = "AUTO", rel_heights = c(0.8, 0.8, 1), align = "v")
+```
+
+```{r all_pools_ind_plot, echo=FALSE, fig.height=5, fig.path="ManuscriptFigures/", fig.width=8,  dev='pdf'}
+nSNPs_plot
+deltaSNP_plot
+gprime_plot
+```
+
+Now, we can obtain the significant regions associated with the trait.
+These regions are significantly different between the extreme-phenotype
+offsprings.
+
+```{r}
+sigRegions_qtl <- getSigRegions(qtl, method = "QTLseq")
+sigRegions_gprime <- getSigRegions(gprime, method = "Gprime", alpha = 0.05)
+rownames(summary(sigRegions_qtl))
+rownames(summary(sigRegions_gprime))
+paste0(length(rownames(summary(sigRegions_qtl))), " significant QTL regions")
+paste0(length(rownames(summary(sigRegions_gprime))), " significant G' regions")
+```
+
+#### Annotation
+
+For the gene information of the significant regions, we use the genome
+annotation provided with the reference genome. To find the gene names in
+the given significant regions, we first simplify the data. We need the
+sequence names, starting position, and the final position of the
+significant region.
+
+Using `makeGRangesFromDataFrame()`, `findOverlaps()`, and
+`annotation[subjectHits()]` functions, we identify the genes in the
+significant regions. For further analysis (i.e. GO analysis), the *D.
+melanogaster* orthologs are used.
+
+```{r}
+sigQTL <- getQTLTable(qtl2, method = "QTLseq", export = T, fileName = "sigQTL.csv")
+sigQTL_positive <- sigQTL[which(sigQTL$avgDeltaSNP > 0),1:4]
+sigQTL_negative <- sigQTL[which(sigQTL$avgDeltaSNP < 0),1:4]
+
+# positive
+granges_sig_regions <- makeGRangesFromDataFrame(sigQTL_positive[,-2], keep.extra.columns = TRUE)
+overlaps <- findOverlaps(granges_sig_regions, annotation)
+overlapping_genes <- annotation[subjectHits(overlaps)]
+ogenes <- as.data.frame(unique(overlapping_genes@elementMetadata@listData[["transcript_id"]]))
+colnames(ogenes) <- "refseq"
+ogenes <- ogenes %>% separate(refseq, c("REFSEQ1", "REFSEQ2"), "_")
+ogenes <- ogenes[which(ogenes$REFSEQ1 == "XM"),]
+ogenes2 <- ogenes %>% separate(REFSEQ2, c("REFSEQ2"))
+ogenes <- unite(ogenes2, col = "REFSEQ",REFSEQ1:REFSEQ2, sep = "_")
+ogenes_FB <- merge(x = ogenes, y = extracted2, by = "REFSEQ")
+colnames(ogenes_FB) = c("REFSEQ", "Dana_ID")
+ogenes_dmelpositive <- merge(x = ogenes_FB, y = orthologs, by = "Dana_ID")
+write_tsv(ogenes_dmelpositive, "positive_ogenes_dmel.tsv")
+
+# negative
+granges_sig_regions <- makeGRangesFromDataFrame(sigQTL_negative[,-2], keep.extra.columns = TRUE)
+overlaps <- findOverlaps(granges_sig_regions, annotation)
+overlapping_genes <- annotation[subjectHits(overlaps)]
+ogenes <- as.data.frame(unique(overlapping_genes@elementMetadata@listData[["transcript_id"]]))
+colnames(ogenes) <- "refseq"
+ogenes <- ogenes %>% separate(refseq, c("REFSEQ1", "REFSEQ2"), "_")
+ogenes <- ogenes[which(ogenes$REFSEQ1 == "XM"),]
+ogenes2 <- ogenes %>% separate(REFSEQ2, c("REFSEQ2"))
+ogenes <- unite(ogenes2, col = "REFSEQ",REFSEQ1:REFSEQ2, sep = "_")
+ogenes_FB <- merge(x = ogenes, y = extracted2, by = "REFSEQ")
+colnames(ogenes_FB) = c("REFSEQ", "Dana_ID")
+ogenes_dmelnegative <- merge(x = ogenes_FB, y = orthologs, by = "Dana_ID")
+write_tsv(ogenes_dmelnegative, "negative_ogenes_dmel.tsv")
+
+# all
+sigQTL_short <- sigQTL[,1:4]
+granges_sig_regions <- makeGRangesFromDataFrame(sigQTL_short[,-2], keep.extra.columns = TRUE)
+overlaps <- findOverlaps(granges_sig_regions, annotation)
+overlapping_genes <- annotation[subjectHits(overlaps)]
+ogenes <- as.data.frame(unique(overlapping_genes@elementMetadata@listData[["transcript_id"]]))
+colnames(ogenes) <- "refseq"
+ogenes <- ogenes %>% separate(refseq, c("REFSEQ1", "REFSEQ2"), "_")
+ogenes <- ogenes[which(ogenes$REFSEQ1 == "XM"),]
+ogenes2 <- ogenes %>% separate(REFSEQ2, c("REFSEQ2"))
+ogenes <- unite(ogenes2, col = "REFSEQ",REFSEQ1:REFSEQ2, sep = "_")
+ogenes_FB <- merge(x = ogenes, y = extracted2, by = "REFSEQ")
+colnames(ogenes_FB) = c("REFSEQ", "Dana_ID")
+ogenes_dmel <- merge(x = ogenes_FB, y = orthologs, by = "Dana_ID")
+write_tsv(ogenes_dmel, "all_ogenes_dmel.tsv")
+```
+
+```{r positiveGO, echo=FALSE, fig.height=5, fig.path="ManuscriptFigures/", fig.width=8,  dev='pdf'}
+result <- ogenes_dmelpositive
+gseGO_BP <- enrichGO(gene = result$ENTREZID, ont = "BP", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+BP <- gseGO_BP@result[which(gseGO_BP@result$p.adjust < 0.05),]
+gseGO_MF <- enrichGO(gene = result$ENTREZID, ont = "MF", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+MF <- gseGO_MF@result[which(gseGO_MF@result$p.adjust < 0.05),]
+gseGO_CC <- enrichGO(gene = result$ENTREZID, ont = "CC", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+CC <- gseGO_CC@result[which(gseGO_CC@result$p.adjust < 0.05),]
+#
+if (length(BP$GeneRatio) > 0) {
+tmp <- BP[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+BP$GeneRatio <- BP$Count/tmp$Total
+BP$Ontology <- "BP"
+} else {
+    paste0("no significant enricment of BP terms are found")
+}
+if (length(MF$GeneRatio) > 0) {
+tmp <- MF[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+MF$GeneRatio <- MF$Count/tmp$Total
+MF$Ontology <- "MF"
+} else {
+    paste0("no significant enricment of MF terms are found")
+}
+if (length(CC$GeneRatio) > 0) {
+tmp <- CC[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+CC$GeneRatio <- CC$Count/tmp$Total
+CC$Ontology <- "CC"
+} else {
+    paste0("no significant enricment of CC terms are found")
+}
+if (length(BP$GeneRatio) > 0) {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(rbind(BP, MF), CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO <- rbind(BP, MF)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#BC3C29FF", "#E18727FF"))
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(BP, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO_plot <- plotEnrich(BP, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    }
+  }
+} else {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(MF, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#E18727FF", "#0072B5FF"))
+    } else {
+      GO_plot <- plotEnrich(MF, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#E18727FF")
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO_plot <- plotEnrich(CC, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#0072B5FF")
+    } else {
+      paste0("No plot drawn due to lack of significant GO terms")
+    }
+  }
+}
+if (length(BP$GeneRatio) == 0 & length(MF$GeneRatio) == 0 & length(CC$GeneRatio) == 0) {
+  paste0("No plot drawn due to lack of significant GO terms")
+  GO_plot <- NULL
+} else {
+  GO_plot <- ggpar(GO_plot, font.tickslab = 6)
+  GO_plot[["facet"]][["params"]][["space_free"]][["x"]] <- FALSE
+}
+GO_plot
+```
+
+```{r negativeGO, echo=FALSE, fig.height=5, fig.path="ManuscriptFigures/", fig.width=8,  dev='pdf'}
+result <- ogenes_dmelnegative
+gseGO_BP <- enrichGO(gene = result$ENTREZID, ont = "BP", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+BP <- gseGO_BP@result[which(gseGO_BP@result$p.adjust < 0.05),]
+gseGO_MF <- enrichGO(gene = result$ENTREZID, ont = "MF", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+MF <- gseGO_MF@result[which(gseGO_MF@result$p.adjust < 0.05),]
+gseGO_CC <- enrichGO(gene = result$ENTREZID, ont = "CC", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+CC <- gseGO_CC@result[which(gseGO_CC@result$p.adjust < 0.05),]
+#
+if (length(BP$GeneRatio) > 0) {
+tmp <- BP[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+BP$GeneRatio <- BP$Count/tmp$Total
+BP$Ontology <- "BP"
+} else {
+    paste0("no significant enricment of BP terms are found")
+}
+if (length(MF$GeneRatio) > 0) {
+tmp <- MF[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+MF$GeneRatio <- MF$Count/tmp$Total
+MF$Ontology <- "MF"
+} else {
+    paste0("no significant enricment of MF terms are found")
+}
+if (length(CC$GeneRatio) > 0) {
+tmp <- CC[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+CC$GeneRatio <- CC$Count/tmp$Total
+CC$Ontology <- "CC"
+} else {
+    paste0("no significant enricment of CC terms are found")
+}
+if (length(BP$GeneRatio) > 0) {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(rbind(BP, MF), CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO <- rbind(BP, MF)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#BC3C29FF", "#E18727FF"))
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(BP, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO_plot <- plotEnrich(BP, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    }
+  }
+} else {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(MF, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#E18727FF", "#0072B5FF"))
+    } else {
+      GO_plot <- plotEnrich(MF, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#E18727FF")
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO_plot <- plotEnrich(CC, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#0072B5FF")
+    } else {
+      paste0("No plot drawn due to lack of significant GO terms")
+    }
+  }
+}
+if (length(BP$GeneRatio) == 0 & length(MF$GeneRatio) == 0 & length(CC$GeneRatio) == 0) {
+  paste0("No plot drawn due to lack of significant GO terms")
+  GO_plot <- NULL
+} else {
+  GO_plot <- ggpar(GO_plot, font.tickslab = 6)
+  GO_plot[["facet"]][["params"]][["space_free"]][["x"]] <- FALSE
+}
+GO_plot
+```
+
+```{r allGO, echo=FALSE, fig.height=5, fig.path="ManuscriptFigures/", fig.width=8,  dev='pdf'}
+result <- ogenes_dmel
+gseGO_BP <- enrichGO(gene = result$ENTREZID, ont = "BP", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+BP <- gseGO_BP@result[which(gseGO_BP@result$p.adjust < 0.05),]
+gseGO_MF <- enrichGO(gene = result$ENTREZID, ont = "MF", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+MF <- gseGO_MF@result[which(gseGO_MF@result$p.adjust < 0.05),]
+gseGO_CC <- enrichGO(gene = result$ENTREZID, ont = "CC", OrgDb = org.Dm.eg.db, readable = T, pAdjustMethod = "fdr", pvalueCutoff = 0.01)
+CC <- gseGO_CC@result[which(gseGO_CC@result$p.adjust < 0.05),]
+#
+if (length(BP$GeneRatio) > 0) {
+tmp <- BP[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+BP$GeneRatio <- BP$Count/tmp$Total
+BP$Ontology <- "BP"
+} else {
+    paste0("no significant enricment of BP terms are found")
+}
+if (length(MF$GeneRatio) > 0) {
+tmp <- MF[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+MF$GeneRatio <- MF$Count/tmp$Total
+MF$Ontology <- "MF"
+} else {
+    paste0("no significant enricment of MF terms are found")
+}
+if (length(CC$GeneRatio) > 0) {
+tmp <- CC[1,] %>% separate(GeneRatio, c(NA, "Total"), "/", convert = T)
+CC$GeneRatio <- CC$Count/tmp$Total
+CC$Ontology <- "CC"
+} else {
+    paste0("no significant enricment of CC terms are found")
+}
+if (length(BP$GeneRatio) > 0) {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(rbind(BP, MF), CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO <- rbind(BP, MF)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#BC3C29FF", "#E18727FF"))
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(BP, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    } else {
+      GO_plot <- plotEnrich(BP, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35)
+    }
+  }
+} else {
+  if (length(MF$GeneRatio) > 0) {
+    if (length(CC$GeneRatio) > 0) {
+      GO <- rbind(MF, CC)
+      GO_plot <- plotEnrich(GO, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = c("#E18727FF", "#0072B5FF"))
+    } else {
+      GO_plot <- plotEnrich(MF, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#E18727FF")
+    }
+  } else {
+    if (length(CC$GeneRatio) > 0) {
+      GO_plot <- plotEnrich(CC, plot_type = "wego", n_term = 15, term_metric = "GeneRatio", wrap_length = 35) + scale_fill_manual(values = "#0072B5FF")
+    } else {
+      paste0("No plot drawn due to lack of significant GO terms")
+    }
+  }
+}
+if (length(BP$GeneRatio) == 0 & length(MF$GeneRatio) == 0 & length(CC$GeneRatio) == 0) {
+  paste0("No plot drawn due to lack of significant GO terms")
+  GO_plot <- NULL
+} else {
+  GO_plot <- ggpar(GO_plot, font.tickslab = 6)
+  GO_plot[["facet"]][["params"]][["space_free"]][["x"]] <- FALSE
+}
+GO_plot
+```
+

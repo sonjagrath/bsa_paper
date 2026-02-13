@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 
+# Additions VO
 bsa_paper.Rproj
+data/processed/*
