@@ -8,10 +8,10 @@ source(file.path("scripts", "_install_packages.R"))
 source(file.path("scripts", "_save_objects.R"))
 
 # ---- 2. Load input data ----
-pool_Tolerant_Offspring <- read_tsv(file.path("data", "raw", "fast_O.table"))
-pool_Sensitive_Offspring <- read_tsv(file.path("data", "raw", "slow_O.table"))
-pool_Tolerant_Parent <- read_tsv(file.path("data", "raw", "fast_P.table"))
-pool_Sensitive_Parent <- read_tsv(file.path("data", "raw", "slow_P.table"))
+pool_Tolerant_Offspring <- read.delim(file.path("data", "raw", "fast_O.table"))
+pool_Sensitive_Offspring <- read.delim(file.path("data", "raw", "slow_O.table"))
+pool_Tolerant_Parent <- read.delim(file.path("data", "raw", "fast_P.table"))
+pool_Sensitive_Parent <- read.delim(file.path("data", "raw", "slow_P.table"))
 
 # ---- 3. Rename columns for clarity ----
 rename_columns <- function(df, prefix) {
@@ -108,8 +108,8 @@ QTLseqr::plotQTLStats(qtl_results, var = "nSNPs") +
   ggtitle("Distribution of SNPs used to calculate G'")
 
 # ---- 12. Significant regions ----
-sigRegions_qtl <- getSigRegions(qtl_results, method = "QTLseq")
-sigRegions_gprime <- getSigRegions(gprime_results, method = "Gprime")
+sigRegions_qtl <- QTLseqr::getSigRegions(qtl_results, method = "QTLseq")
+sigRegions_gprime <- QTLseqr::getSigRegions(gprime_results, method = "Gprime")
 
 # ---- 13. Save key objects ----
 save_object(qtl_results, "qtl_results")

@@ -10,6 +10,7 @@ Vincent Ohlhauser
 - _install_packaged.R : Removed R objects after script is finished
 - 01.QTLseq_Analysis.R : Removed package loading, is handled by _install_packages.R
 - 01.QTLseq_Analysis.R : Changed input paths to read_tsv(file.path("data", "raw", file))
+- 01.QTLseq_Analysis.R : Changed read_tsv -> read.delim 
 - 01.QTLseq_Analysis.R : Added some more linebreaks
 - 01.QTLseq_Analysis.R : Added pdf device to save plots at results/plots including timestamp
 - 01.QTLseq_Analysis.R : Added titles to plots to make them more informative

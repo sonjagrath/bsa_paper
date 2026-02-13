@@ -5,28 +5,13 @@
 
 # ---- 1. Load packages ----
 source(file.path("scripts", "_install_packages.R"))
-library(vcfR)
-library(QTLseqr)
-library(dplyr)
-library(tidyr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(ggpubr)
-library(GenomicRanges)
-library(rtracklayer)
-library(AnnotationDbi)
-library(org.Dm.eg.db)
-library(clusterProfiler)
-library(enrichR)
-library(openxlsx)
 source(file.path("scripts", "_save_objects.R"))
 
 # ---- 2. Load data ----
-refseq_flybase <- read_tsv(file.path("data", "REFSEQ_FLYBASE_Dana.txt"))
-dmel_dana_ortho <- read_excel(file.path("data", "dmel_dana_orthologs.xlsx"))
-annotation <- import(file.path("data", "genomic.gtf"))
-sigQTL <- read_csv(file.path("data", "sigQTL.csv"))
+refseq_flybase <- read_tsv(file.path("data", "raw", "REFSEQ_FLYBASE_Dana.txt"))
+dmel_dana_ortho <- read_excel(file.path("data", "raw", "dmel_dana_orthologs.xlsx"))
+annotation <- import(file.path("data", "raw", "genomic.gtf"))
+sigQTL <- read_csv(file.path("data", "raw", "sigQTL.csv"))
 
 # ---- 3. Prepare ortholog mapping ----
 orthologs <- AnnotationDbi::select(org.Dm.eg.db,
@@ -95,7 +80,7 @@ perform_GO_analysis <- function(result_data, org_db, region_label) {
 }
 
 perform_enrichGO <- function(entrez_ids, ont, org_db) {
-  enrichGO(gene = entrez_ids,
+  clusterProfiler::enrichGO(gene = entrez_ids,
            OrgDb = org_db,
            keyType = "ENTREZID",
            ont = ont,
