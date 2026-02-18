@@ -6,4 +6,6 @@
 # Additions VO
 bsa_paper.Rproj
 data/processed/*
+data/raw/*
 objects/
+results/plots/*

@@ -2,6 +2,23 @@
 
 Vincent Ohlhauser
 
+## [26/01/18]
+
+### Changed
+
+- 01.QTLseq_Analysis.R : Renamed object df -> SNPset
+- 01.QTLseq_Analysis.R : Added file.exists check to pools file
+- 01.QTLseq_Analysis.R : Re-structured script: Put helper functions at the top
+- 01.QTLseq_Analysis.R : Used Veras values for `filterSNPs` and `runQTLseqAnalysis`
+- 01.QTLseq_Analysis.R : Added G' plot
+- 01.QTLseq_Analysis.R : Exported significant QTL to csv file sigQTL.csv
+- 02_QTL_Annotation[...] : Re-structured script: Put helper functions at the top
+
+## [26/02/17]
+
+### Added
+- BSA_incl.annotatio.qmd : Collects Veras code including some more annotation into one document
+
 ## [26/02/13]
 
 ### Changed
