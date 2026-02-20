@@ -3,7 +3,7 @@
 # Annotation and Gene Ontology enrichment analysis
 ##############################################
 
-# ---- 1. Load packages define helper functions ----
+# ---- 1. Load packages and define helper functions ----
 source(file.path("scripts", "_install_packages.R"))
 source(file.path("scripts", "_save_objects.R"))
 
@@ -78,11 +78,64 @@ process_enrich_result <- function(enrich_result,
   return(result_df)
 }
 
+# Functions to plot GO enrich results
+plot_GO_bar <- function(enrichResult, title = "GO plot", n_term = 25){
+  df <- enrichResult%>%
+    separate(GeneRatio, into = c("Gene", "Ratio"), sep = "/")%>%
+    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))%>%
+    arrange(p.adjust)%>% slice_head(n = n_term)%>%
+    arrange(desc(GeneRatio))
+  
+  ontology_labels <- c(`Biological Process` = "Biological\nProcess",
+                       `Molecular Function` = "Molecular\nFunction",
+                       `Cellular Component` = "Cellular\nComponent")
+  
+  ggplot(df, aes(x = reorder(Description, GeneRatio), y = GeneRatio*100,
+                 fill = Ontology))+
+    geom_bar(stat = "identity") +
+    theme_bw() + 
+    facet_grid(. ~ Ontology, scales = "free_x", space = "free_x",
+               labeller = labeller(Ontology = ontology_labels))+
+    scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 35))+
+    scale_fill_manual(values = c("#BC3C29FF", "#0072B5FF", "#E18727FF"))+
+    theme_bw()+
+    theme(legend.position = "none",
+          axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1),
+          panel.grid = element_blank())+
+    labs(y = "GeneRatio [%]", x = "", title = title)
+}
+
+plot_GO_point <- function(enrichResult, n_terms = 25, title = "GO plot"){
+  df <- enrichResult%>%
+    separate(GeneRatio, into = c("Gene", "Ratio"), sep = "/")%>%
+    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))%>%
+    arrange(p.adjust)%>% slice_head(n = n_term)%>%
+    arrange(desc(GeneRatio))
+  
+  ontology_labels <- c(`Biological Process` = "Biological\nProcess",
+                       `Molecular Function` = "Molecular\nFunction",
+                       `Cellular Component` = "Cellular\nComponent")
+  
+  ggplot(df, aes(y = reorder(Description, GeneRatio), x = GeneRatio*100,
+                 size = Count, color = p.adjust))+
+    geom_point()+
+    facet_grid(Ontology ~ ., scales = "free_y", space = "free_y",
+               labeller = labeller(Ontology = ontology_labels))+
+    scale_color_gradient(low = "red", high = "blue")+
+    scale_y_discrete(labels = function(x) stringr::str_wrap(x, width = 35))+
+    theme_bw()+
+    theme(legend.position = "bottom", 
+          axis.text.y = element_text(lineheight = 1.1),
+          panel.grid = element_blank())+
+    labs(x = "GeneRatio [%]", y = "", title = title)
+    
+}
+
 # ---- 2. Load data ----
 refseq_flybase <- read_tsv(file.path("data", "raw", "REFSEQ_FLYBASE_Dana.txt"))
 dmel_dana_ortho <- read_excel(file.path("data", "raw", "dmel_dana_orthologs.xlsx"))
-annotation <- import(file.path("data", "raw", "genomic.gtf"))
-sigQTL <- read_csv(file.path("data", "raw", "sigQTL.csv"))
+annotation <- rtracklayer::import(file.path("data", "raw", "genomic.gtf"))
+sigQTL <- read_csv(file.path("data", "processed", "sigQTL.csv"))
 
 # ---- 3. Prepare ortholog mapping ----
 orthologs <- AnnotationDbi::select(org.Dm.eg.db,
@@ -108,8 +161,16 @@ pos_QTL <- sigQTL[which(sigQTL$avgDeltaSNP > 0), 1:4]
 neg_QTL <- sigQTL[which(sigQTL$avgDeltaSNP < 0), 1:4]
 
 # ---- 7. Annotate QTLs ----
-orthologs_positive <- process_qtl(pos_QTL, annotation, refseq_flybase, orthologs, file.path("results", "enrichment", "positive_annotated_orthologs.tsv"))
-orthologs_negative <- process_qtl(neg_QTL, annotation, refseq_flybase, orthologs, file.path("results", "enrichment", "negative_annotated_orthologs.tsv"))
+orthologs_positive <- process_qtl(pos_QTL, 
+                                  annotation, 
+                                  refseq_flybase, 
+                                  orthologs, 
+                                  file.path("results", "enrichment", "positive_annotated_orthologs.tsv"))
+orthologs_negative <- process_qtl(neg_QTL, 
+                                  annotation, 
+                                  refseq_flybase, 
+                                  orthologs, 
+                                  file.path("results", "enrichment", "negative_annotated_orthologs.tsv"))
 
 # ---- 8. GO enrichment analysis ----
 GO_positive_data <- perform_GO_analysis(orthologs_positive, org.Dm.eg.db, "Positive")
@@ -117,10 +178,32 @@ GO_negative_data <- perform_GO_analysis(orthologs_negative, org.Dm.eg.db, "Negat
 GO_combined_data <- rbind(GO_positive_data, GO_negative_data)
 
 # ---- 9. Visualize enriched GO-terms ----
+p1 <- plot_GO_bar(GO_positive_data,
+                 title = "GO terms of genes in regions with positive deltaSNP")
 
-# ---- 9. Save key objects ----
+p2 <- plot_GO_bar(GO_negative_data,
+                  title = "GO terms of genes in regions with negative deltaSNP")
+
+p3 <- plot_GO_point(GO_positive_data,
+        title = "GO terms of genes in regions with positive deltaSNP")
+
+p4 <- plot_GO_point(GO_negative_data,
+        title = "GO terms of genes in regions with negative deltaSNP")
+
+# ---- 9. Save key objects and plots----
 save_object(orthologs_positive, "orthologs_positive")
 save_object(orthologs_negative, "orthologs_negative")
 save_object(GO_combined_data, "GO_combined_data")
 
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+out_pdf <- file.path("results", "plots", 
+                     paste0("02_GO_enrichment_plots_", timestamp, ".pdf"))
+pdf(out_pdf, width = 14, height = 12)
+
+print(p1)
+print(p2)
+print(p3)
+print(p4)
+
+dev.off()
 ##EOF

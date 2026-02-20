@@ -2,6 +2,36 @@
 
 Vincent Ohlhauser
 
+
+## [26/02/20]
+
+### Changed
+
+- .gitignore : Add results/supplementary_tables
+- 03_Supplemen[...] : Removed package loading
+- 03_Supplemen[...] : Added function to newest .rds object, add import of objects 
+- 03_Supplemen[...] : Added function to style tables for saving to pdf
+- 03_Supplemen[...] : Switched table saving of QTLs and sequencing QC kable --> pdf
+- run_pipeline.R : Changed run_scripts.R to not save objects
+- 02_QTL_Annotation[...] : Added GO-barplot function, added barplots
+- All plots: removed grid lines
+
+### Fixed
+
+- run_pipeline.R : Fixed sink not writing logfile (added connection and closed at end)
+- 01.QTLseq_Analysis.R : Fixed plots not showing up in the plots pdf at results/plots by calling print(plot)
+- 02_QTL_Annotation[...] : Fixed plots in results pdf, see above
+
+## [26/02/19]
+
+### Changed
+
+- 02_QTL_Annotation[...] : Specified R package when calling `import`
+- 02_QTL_Annotation[...] : Corrected file path to sigQTL.csv
+- 02_QTL_Annotation[...] : Added `plot_GO` function
+- 02_QTL_Annotation[...] : Added Plot saving to pdf into resuts/plots
+- .github : Added results/enrichment
+
 ## [26/01/18]
 
 ### Changed
@@ -37,19 +67,23 @@ Vincent Ohlhauser
 ## [26/02/10]
 
 ### Added
+
 - Files from Vera, added at BSA_manuscript for later use : 
   * BSA_manuscript.rmd
   * phenotype_RIL_II.xlsx
   * phenotyping_script.R
 
 ### Changed
+
 - _install_packages.R : Re-arranged packages by source (CRAN/Bioconductor/Github)
 - _install_packages.R : Switched to package install by `pak::pkg_install()`, this migh require some fine tuning
 
 ## [26/02/09]
 
 ### Added
+
 - CHANGELOG.md
 
 ### Changed
+
 - .gitignore : Excluded bsa_paper.Rproj from Github

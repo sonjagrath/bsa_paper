@@ -7,41 +7,51 @@
 source(file.path("scripts", "_install_packages.R"))
 source(file.path("scripts", "_save_objects.R"))
 
-library(writexl)
-library(readr)
-library(kableExtra)
-library(knitr)
+# Helper function to import newest RDS
+import_newest_object <- function(name, dir = "objects/"){
+  files <- list.files(dir, pattern = name, full.names = TRUE)
+  
+  if(length(file)==0){stop(paste0("No object named ", name, "found\naborting..."))}
+  
+  info <- file.info(files)
+  newest <- rownames(info)[which.max(info$mtime)]
+  
+  readRDS(newest)
+}
+
+# Helper function to style tables for pdf output
+style_table <- function(df, tbl_head){
+  grid::grid.newpage() 
+  tg <- gridExtra::tableGrob(df, rows = NULL, 
+                             theme = gridExtra::ttheme_default(colhead = list(
+                               fg_params = list(fontface = "bold", col = "black"),
+                               bg_params = list(fill = "white"))))
+  
+  gridExtra::grid.arrange(tg, top = grid::textGrob(tbl_head,
+                                                   gp = grid::gpar(fontsize = 14, 
+                                                                   fontface = "bold")), 
+                          newpage = FALSE)
+}
 
 # ---- 2. Prepare GeneID Excel sheet ----
-GeneID_combined_data <- GO_combined_data[, c("Description", "geneID")]
-write_xlsx(GeneID_combined_data, file.path("results", "supplementary_tables", "GeneID_combined_data.xlsx"))
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
+GO_combined_data <- import_newest_object("GO_combined_data")
+GeneID_combined_data <- GO_combined_data[, c("Description", "geneID", "Region")]
+write_xlsx(GeneID_combined_data, file.path("results", 
+                                           "supplementary_tables", 
+                                           paste0("GeneID_combined_data_", 
+                                                  timestamp,
+                                                  ".xlsx")))
 save_object(GeneID_combined_data, "GeneID_combined_data")
 
 # ---- 3. Significant QTL table ----
-chromosome_lookup <- c(
-  "NC_057927.1" = "Chr 2L",
-  "NC_057928.1" = "Chr 2R",
-  "NC_057929.1" = "Chr 3L",
-  "NC_057930.1" = "Chr 3R",
-  "NC_057931.1" = "Chr XL",
-  "NC_057932.1" = "Chr XR"
-)
-sigQTL$CHROM <- chromosome_lookup[sigQTL$CHROM]
+sigQTL <- read_csv(file.path("data", "processed", "sigQTL.csv"))
+qtl_table <- sigQTL[, c("qtl", "CHROM", "start", "end", "length", "nSNPs", "avgDeltaSNP")]
 
-qtl_table <- sigQTL[, c("CHROM", "start", "end", "length", "nSNPs", "avgDeltaSNP")]
-
-sig_qtl_table <- qtl_table %>%
-  kable("html", caption = "Significant QTL Regions") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-                full_width = FALSE, position = "center")
-save_object(sig_qtl_table, "sig_qtl_table")
-
-# ---- 4. VCF statistics table ----
-VCF_File_Statistics_Combined <- read_csv(file.path("data", "VCF_File_Statistics_Combined.csv"))
-table_vcf <- kbl(VCF_File_Statistics_Combined, booktabs = TRUE, caption = "VCF File Statistics") %>%
-  kable_styling(full_width = FALSE, position = "center", font_size = 12) %>%
-  column_spec(1, bold = TRUE)
-save_object(table_vcf, "VCF_File_Statistics_Combined_table")
+# ---- 4. VCF statistics table ---- 
+VCF_File_Statistics_Combined <- read_csv(file.path("data", "raw",
+                                                   "VCF_File_Statistics_Combined.csv"))
 
 # ---- 5. Raw sequencing QC metrics ----
 QC_rawdata <- data.frame(
@@ -59,12 +69,17 @@ QC_rawdata <- data.frame(
   GC = c(45.14, 45.36, 45.00, 43.67, 43.72)
 )
 
-QC_raw_data_table <- kable(QC_rawdata, "html",
-                           col.names = c("Sample", "Library Flowcell Lane", "Raw reads",
-                                         "Effective (%)", "Error (%)", "Q20 (%)", "Q30 (%)", "GC (%)")) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
-  column_spec(1, bold = TRUE) %>%
-  add_header_above(c(" " = 1, "Details" = 2, "Quality Metrics" = 5))
+# ---- 6. Write additional tables to pdf ----
+out_pdf <- file.path("results", "supplementary_tables", 
+                     paste0("03_Supplementary_tables_", timestamp, ".pdf"))
+pdf(out_pdf, width = 14, height = 8)
 
-save_object(QC_raw_data_table, "QC_raw_data_table")
+style_table(qtl_table, "Table of significant QTL regions")
 
+style_table(VCF_File_Statistics_Combined, 
+            "Variant calling summary table")
+
+style_table(QC_rawdata, "Sequencing quality control information")
+
+dev.off()
+###EOF

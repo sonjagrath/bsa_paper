@@ -24,6 +24,7 @@ mkdir -p "$PROJECT_ROOT/data/processed"
 mkdir -p "$PROJECT_ROOT/results/plots"
 mkdir -p "$PROJECT_ROOT/results/enrichment"
 mkdir -p "$PROJECT_ROOT/results/supplementary_tables"
+mkdir -p "$PROJECT_ROOT/results/logs"
 mkdir -p "$PROJECT_ROOT/objects"
 mkdir -p "$PROJECT_ROOT/scripts"
 

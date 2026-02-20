@@ -41,7 +41,7 @@ if (length(args) > 0 && "--step" %in% args) {
 }
 
 # ---- 5. Helper function to run scripts ----
-run_script <- function(script_name, objects_to_save = NULL) {
+run_script <- function(script_name, scripts_dir = "scripts") {
   message("\n▶ Running:", script_name)
   env <- new.env()
   script_path <- file.path(scripts_dir, script_name)
@@ -51,14 +51,6 @@ run_script <- function(script_name, objects_to_save = NULL) {
   result <- tryCatch({
     source(script_path, local = env)
     message("✅ Completed:", script_name)
-    
-    if (!is.null(objects_to_save)) {
-      for (obj_name in objects_to_save) {
-        if (exists(obj_name, envir = env)) {
-          save_object(get(obj_name, envir = env), obj_name, dir = objects_dir)
-        } else message(paste("⚠️ Object", obj_name, "not found in", script_name))
-      }
-    }
     
     list(status = "success", error = NULL)
   },
@@ -72,13 +64,9 @@ run_script <- function(script_name, objects_to_save = NULL) {
 
 # ---- 6. Define workflow steps ----
 workflow_steps <- list(
-  "1" = list(script = "01_QTLseq_Analysis.R", 
-             objects = c("qtl_off", "gprime")),
-  "2" = list(script = "02_QTL_Annotation_and_GO_Enrichment.R", 
-             objects = c("orthologs_positive", "orthologs_negative", "GO_combined_data")),
-  "3" = list(script = "03_Supplementary_Tables_and_Reports.R", 
-             objects = c("GeneID_combined_data", "sigQTL", "VCF_File_Statistics_Combined"))
-)
+  "1" = list(script = "01_QTLseq_Analysis.R"),
+  "2" = list(script = "02_QTL_Annotation_and_GO_Enrichment.R"),
+  "3" = list(script = "03_Supplementary_Tables_and_Reports.R"))
 
 # ---- 7. Run step(s) ----
 start_time <- Sys.time()
@@ -88,11 +76,11 @@ if (is.null(step)) {
   message("Running full pipeline (steps 1–3)...")
   for (s in names(workflow_steps)) {
     step_info <- workflow_steps[[s]]
-    results_summary[[step_info$script]] <- run_script(step_info$script, step_info$objects)
+    results_summary[[step_info$script]] <- run_script(step_info$script)
   }
 } else if (as.character(step) %in% names(workflow_steps)) {
   step_info <- workflow_steps[[as.character(step)]]
-  results_summary[[step_info$script]] <- run_script(step_info$script, step_info$objects)
+  results_summary[[step_info$script]] <- run_script(step_info$script)
 } else {
   message("⚠️ Invalid step argument. Valid steps: 1, 2, 3")
 }
