@@ -48,17 +48,14 @@ SNPset <- QTLseqr::importFromGATK(file = pool_file, highBulk = HighBulk,
                      lowBulk = LowBulk, chromList = Chroms)
 
 # ---- 5. Visualize depth and allele frequency distributions ----
-timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-out_pdf <- file.path("results", "plots", 
-                     paste0("01_qtlseq_plots_", timestamp, ".pdf"))
-pdf(out_pdf, width = 10, height = 5)
-
-ggplot(SNPset) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
+p1 <- ggplot(SNPset) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
   theme_minimal() + 
   xlim(0, 1000) +
+  theme(panel.grid = element_blank())+
   ggtitle("Distribution of total read depth per SNP (DP.HIGH + DP.LOW)")
-ggplot(SNPset) + geom_histogram(aes(x = REF_FRQ)) + 
+p2 <- ggplot(SNPset) + geom_histogram(aes(x = REF_FRQ)) + 
   theme_minimal()+
+  theme(panel.grid = element_blank())+
   ggtitle("Overall reference allele frequency across bulks (REF_FRQ)")
 
 # ---- 6. Filter SNPs ----
@@ -69,19 +66,26 @@ SNPset_filt <- QTLseqr::filterSNPs(SNPset = SNPset,
                       verbose = TRUE)%>%
   na.omit()
 
+save_object(SNPset_filt, "snps")
+q(save = "no", status = 0)
+
 # ---- 7. Visualize filtered data ----
-ggplot(SNPset_filt) + geom_histogram(aes(x = REF_FRQ)) + 
+p3 <- ggplot(SNPset_filt) + geom_histogram(aes(x = REF_FRQ)) + 
   theme_minimal()+
+  theme(panel.grid = element_blank())+
   ggtitle("Reference allele frequency after filtering")
-ggplot(SNPset_filt) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
+p4 <- ggplot(SNPset_filt) + geom_histogram(aes(x = DP.HIGH + DP.LOW)) + 
   theme_minimal() + 
   xlim(0, 1000)+
+  theme(panel.grid = element_blank())+
   ggtitle("Total read depth after filtering")
-ggplot(SNPset_filt) + geom_histogram(aes(x = SNPindex.HIGH)) + 
+p5 <- ggplot(SNPset_filt) + geom_histogram(aes(x = SNPindex.HIGH)) + 
   theme_minimal()+
+  theme(panel.grid = element_blank())+
   ggtitle("Alternative allele frequency in the HIGH bulk (SNP-index)")
-ggplot(SNPset_filt) + geom_histogram(aes(x = SNPindex.LOW)) + 
+p6 <- ggplot(SNPset_filt) + geom_histogram(aes(x = SNPindex.LOW)) + 
   theme_minimal()+
+  theme(panel.grid = element_blank())+
   ggtitle("Alternative allele frequency in the LOW bulk (SNP-index)")
 
 # ---- 8. Run QTLseq and G' analyses ----
@@ -92,6 +96,7 @@ qtl_results <- QTLseqr::runQTLseqAnalysis(SNPset_filt,
                                  popStruc = "RIL", 
                                  bulkSize = 100, 
                                  intervals = c(95, 99))
+
 qtl_results$CHROM <- factor(qtl_results$CHROM,
                             levels = Chroms,
                             labels = chromosomes)
@@ -105,14 +110,14 @@ gprime_results$CHROM <- factor(gprime_results$CHROM,
                                labels = chromosomes)
 
 # ---- 9. Plot QTL statistics ----
-QTLseqr::plotQTLStats(qtl_results, var = "deltaSNP", plotIntervals = TRUE) + 
+p7 <- QTLseqr::plotQTLStats(qtl_results, var = "deltaSNP", plotIntervals = TRUE) + 
   theme_minimal() + 
   scale_color_manual(values = c("darkgrey", "red"))+
   ggtitle("deltaSNP-index plot across the genome")
-QTLseqr::plotQTLStats(qtl_results, var = "nSNPs") + 
+p8 <- QTLseqr::plotQTLStats(qtl_results, var = "nSNPs") + 
   theme_minimal() +
   ggtitle("SNP density across genome within 1 Mb windows")
-QTLseqr::plotQTLStats(gprime_results, var = "Gprime", plotThreshold = TRUE) + 
+p9 <- QTLseqr::plotQTLStats(gprime_results, var = "Gprime", plotThreshold = TRUE) + 
   theme_minimal() +
   ggtitle("G` value across the genome within 1 Mb windows")
 
@@ -120,7 +125,7 @@ QTLseqr::plotQTLStats(gprime_results, var = "Gprime", plotThreshold = TRUE) +
 sigRegions_qtl <- QTLseqr::getSigRegions(qtl_results, method = "QTLseq")
 sigRegions_gprime <- QTLseqr::getSigRegions(gprime_results, method = "Gprime")
 
-# ---- 11. Save key objects ----
+# ---- 11. Save key objects and plots  ----
 save_object(qtl_results, "qtl_results")
 save_object(gprime_results, "gprime_results")
 save_object(sigRegions_qtl, "sigRegions_qtl")
@@ -128,6 +133,21 @@ save_object(sigRegions_gprime, "sigRegions_gprime")
 
 qtl_path <- file.path("data", "processed", "sigQTL.csv")
 getQTLTable(qtl_results, method = "QTLseq", export = TRUE, fileName = qtl_path)
+
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+out_pdf <- file.path("results", "plots", 
+                     paste0("01_qtlseq_plots_", timestamp, ".pdf"))
+pdf(out_pdf, width = 10, height = 5)
+
+print(p1)
+print(p2)
+print(p3)
+print(p4)
+print(p5)
+print(p6)
+print(p7)
+print(p8)
+print(p9)
 
 dev.off()
 ###EOF
