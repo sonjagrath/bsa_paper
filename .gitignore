@@ -9,3 +9,6 @@ data/processed/*
 data/raw/*
 objects/
 results/plots/*
+results/enrichment/*
+results/supplementary_tables/*
+results/logs/*

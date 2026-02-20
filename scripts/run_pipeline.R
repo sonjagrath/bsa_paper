@@ -21,8 +21,9 @@ for (dir in dirs) if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 # ---- 3. Start logging ----
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 log_file <- file.path(log_dir, paste0("pipeline_log_", timestamp, ".txt"))
-sink(log_file, split = TRUE)
-sink(log_file, type = "message", append = TRUE)
+log_con <- file(log_file, open = "a")
+sink(log_con, split = TRUE)
+sink(log_con, type = "message", append = TRUE)
 
 message("==================================================")
 message("🚀 Starting QTL-seq analysis pipeline")
@@ -100,6 +101,8 @@ end_time <- Sys.time()
 message("\n✅ Pipeline finished")
 message(paste("Elapsed time:", round(difftime(end_time, start_time, units = "mins"), 2), "minutes"))
 
-sink()
 sink(type = "message")
+sink()
+close(log_con)
 
+###EOF
