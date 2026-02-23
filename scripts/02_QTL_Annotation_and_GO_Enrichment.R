@@ -79,12 +79,17 @@ process_enrich_result <- function(enrich_result,
 }
 
 # Functions to plot GO enrich results
-plot_GO_bar <- function(enrichResult, title = "GO plot", n_term = 25){
+plot_GO_bar <- function(enrichResult, title = "GO plot", n_terms = NULL){
   df <- enrichResult%>%
     separate(GeneRatio, into = c("Gene", "Ratio"), sep = "/")%>%
-    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))%>%
-    arrange(p.adjust)%>% slice_head(n = n_term)%>%
-    arrange(desc(GeneRatio))
+    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))
+  
+  if(!is.null(n_terms)){
+    df <- df%>% arrange(df, p.adjust)%>% slice_head(n = n_terms)
+    title <- paste0(title, ", showing ", n_terms, " terms")
+  }
+  
+  df <- arrange(df, desc(GeneRatio))
   
   ontology_labels <- c(`Biological Process` = "Biological\nProcess",
                        `Molecular Function` = "Molecular\nFunction",
@@ -105,12 +110,17 @@ plot_GO_bar <- function(enrichResult, title = "GO plot", n_term = 25){
     labs(y = "GeneRatio [%]", x = "", title = title)
 }
 
-plot_GO_point <- function(enrichResult, n_terms = 25, title = "GO plot"){
+plot_GO_point <- function(enrichResult, n_terms = NULL, title = "GO plot"){
   df <- enrichResult%>%
     separate(GeneRatio, into = c("Gene", "Ratio"), sep = "/")%>%
-    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))%>%
-    arrange(p.adjust)%>% slice_head(n = n_term)%>%
-    arrange(desc(GeneRatio))
+    mutate(GeneRatio = as.numeric(Gene) / as.numeric(Ratio))  
+  
+  if(!is.null(n_terms)){
+      df <- df%>% arrange(df, p.adjust)%>% slice_head(n = n_terms)
+      title <- paste0(title, ", showing ", n_terms, " terms")
+    }
+  
+  df <- arrange(df, desc(GeneRatio))
   
   ontology_labels <- c(`Biological Process` = "Biological\nProcess",
                        `Molecular Function` = "Molecular\nFunction",
@@ -179,16 +189,20 @@ GO_combined_data <- rbind(GO_positive_data, GO_negative_data)
 
 # ---- 9. Visualize enriched GO-terms ----
 p1 <- plot_GO_bar(GO_positive_data,
-                 title = "GO terms of genes in regions with positive deltaSNP")
+                 title = "GO terms of genes in regions with positive deltaSNP",
+                 n_terms = 25)
 
 p2 <- plot_GO_bar(GO_negative_data,
-                  title = "GO terms of genes in regions with negative deltaSNP")
+                  title = "GO terms of genes in regions with negative deltaSNP",
+                  n_terms = 25)
 
 p3 <- plot_GO_point(GO_positive_data,
-        title = "GO terms of genes in regions with positive deltaSNP")
+        title = "GO terms of genes in regions with positive deltaSNP",
+        n_terms = 25)
 
 p4 <- plot_GO_point(GO_negative_data,
-        title = "GO terms of genes in regions with negative deltaSNP")
+        title = "GO terms of genes in regions with negative deltaSNP",
+        n_terms = 25)
 
 # ---- 9. Save key objects and plots----
 save_object(orthologs_positive, "orthologs_positive")

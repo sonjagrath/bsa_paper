@@ -66,9 +66,6 @@ SNPset_filt <- QTLseqr::filterSNPs(SNPset = SNPset,
                       verbose = TRUE)%>%
   na.omit()
 
-save_object(SNPset_filt, "snps")
-q(save = "no", status = 0)
-
 # ---- 7. Visualize filtered data ----
 p3 <- ggplot(SNPset_filt) + geom_histogram(aes(x = REF_FRQ)) + 
   theme_minimal()+
@@ -91,6 +88,8 @@ p6 <- ggplot(SNPset_filt) + geom_histogram(aes(x = SNPindex.LOW)) +
 # ---- 8. Run QTLseq and G' analyses ----
 chromosomes <- c("Chr 2L", "Chr 2R", "Chr 3L", "Chr 3R", "Chr XL", "Chr XR")
 
+RNGkind("Mersenne-Twister", "Inversion")
+set.seed(125)
 qtl_results <- QTLseqr::runQTLseqAnalysis(SNPset_filt, 
                                  windowSize = 1e6, 
                                  popStruc = "RIL", 

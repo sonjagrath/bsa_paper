@@ -2,6 +2,15 @@
 
 Vincent Ohlhauser
 
+## [26/02/23]
+
+### Changed
+
+- 01.QTLseq_Analysis.R : Added a random seed and RNGkind infront of the QTLseqr::runQTLseqAnalysis step to prevent stochastic behaviour
+
+### Fixed
+
+- 02_QTL_Annotation[...] : Fixed plotting functions, wrongly named n_terms
 
 ## [26/02/20]
 
