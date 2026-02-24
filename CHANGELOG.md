@@ -14,6 +14,7 @@ Vincent Ohlhauser
 - 03_Supplemen[...] : Added ID. p.adjust and Onthology to Output table
 - 02_QTL_Annotation[...] : Changed orthologs files to be in results/supplementary_tables
 - 03_Supplemen[...] : Added supplementary tables with CCRT and mortality values, fig1,2 and figS1,S2
+- 03_Supplemen[...] : Added LIi50 table to pdf output
 - README.md : Corrected description of output files
 
 ### Removed

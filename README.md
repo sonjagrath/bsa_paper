@@ -113,6 +113,8 @@ This will:
   
   - CCRT and Mortality phenotyping data
   
+  - LTi50 phenotyping data
+  
   - Ortholog tables from D. ananassae to D. melanogaster from significant regions
 
 

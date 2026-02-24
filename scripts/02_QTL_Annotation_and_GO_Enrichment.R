@@ -171,16 +171,22 @@ pos_QTL <- sigQTL[which(sigQTL$avgDeltaSNP > 0), 1:4]
 neg_QTL <- sigQTL[which(sigQTL$avgDeltaSNP < 0), 1:4]
 
 # ---- 7. Annotate QTLs ----
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
 orthologs_positive <- process_qtl(pos_QTL, 
                                   annotation, 
                                   refseq_flybase, 
                                   orthologs, 
-                                  file.path("results", "enrichment", "positive_annotated_orthologs.tsv"))
+                                  file.path("results", "supplementary_tables", 
+                                            paste0("orthologs_dana_dmel_positive_regions_", 
+                                            timestamp, ".tsv")))
 orthologs_negative <- process_qtl(neg_QTL, 
                                   annotation, 
                                   refseq_flybase, 
                                   orthologs, 
-                                  file.path("results", "enrichment", "negative_annotated_orthologs.tsv"))
+                                  file.path("results", "supplementary_tables", 
+                                            paste0("orthologs_dana_dmel_negative_regions_", 
+                                            timestamp, ".tsv")))
 
 # ---- 8. GO enrichment analysis ----
 GO_positive_data <- perform_GO_analysis(orthologs_positive, org.Dm.eg.db, "Positive")
@@ -209,7 +215,6 @@ save_object(orthologs_positive, "orthologs_positive")
 save_object(orthologs_negative, "orthologs_negative")
 save_object(GO_combined_data, "GO_combined_data")
 
-timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 out_pdf <- file.path("results", "plots", 
                      paste0("02_GO_enrichment_plots_", timestamp, ".pdf"))
 pdf(out_pdf, width = 14, height = 12)
