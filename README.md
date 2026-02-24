@@ -91,6 +91,8 @@ This will:
 
 ## Output
 
+- Logs of the processing run in `results/logs/`
+
 - Plots: `results/plots/`
 
   - QTL maps
@@ -98,16 +100,20 @@ This will:
   - SNP density plots
 
   - GO enrichment bar and dot plots
-
-- GO enrichment tables: `results/enrichment/`
+  
+  - CCRT and Mortality plots (Paper figures 1, 2, S1 and S2)
 
 - Supplementary tables: `results/supplementary_tables/`
 
   - Excel sheets for gene IDs
 
-  - HTML tables for significant QTLs and VCF statistics
+  - Significant QTLs and VCF statistics
 
   - Raw sequencing QC tables
+  
+  - CCRT and Mortality phenotyping data
+  
+  - Ortholog tables from D. ananassae to D. melanogaster from significant regions
 
 
 

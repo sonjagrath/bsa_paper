@@ -2,6 +2,26 @@
 
 Vincent Ohlhauser
 
+## [26/02/24]
+
+### Added
+
+- data/raw/phenotype_RIL_IL.xslx : File containing Phenotyping data
+- setup_project.R : Rscript to generate the folder structure
+
+### Changed
+
+- 03_Supplemen[...] : Added ID. p.adjust and Onthology to Output table
+- 02_QTL_Annotation[...] : Changed orthologs files to be in results/supplementary_tables
+- 03_Supplemen[...] : Added supplementary tables with CCRT and mortality values, fig1,2 and figS1,S2
+- README.md : Corrected description of output files
+
+### Removed
+
+- All files "dummy.txt"
+- Folder "results/enrichment/"
+- "setup_project.sh" -> replaced with "setup_project.R"
+
 ## [26/02/23]
 
 ### Changed
