@@ -106,7 +106,8 @@ plot_GO_bar <- function(enrichResult, title = "GO plot", n_terms = NULL){
     theme_bw()+
     theme(legend.position = "none",
           axis.text.x = element_text(angle = 60, hjust = 1, vjust = 1),
-          panel.grid = element_blank())+
+          panel.grid = element_blank(),
+          strip.background = element_rect(fill = "white", colour = "black"))+
     labs(y = "GeneRatio [%]", x = "", title = title)
 }
 
@@ -136,7 +137,8 @@ plot_GO_point <- function(enrichResult, n_terms = NULL, title = "GO plot"){
     theme_bw()+
     theme(legend.position = "bottom", 
           axis.text.y = element_text(lineheight = 1.1),
-          panel.grid = element_blank())+
+          panel.grid = element_blank(),
+          strip.background = element_rect(fill = "white", colour = "black"))+
     labs(x = "GeneRatio [%]", y = "", title = title)
     
 }
@@ -173,6 +175,14 @@ neg_QTL <- sigQTL[which(sigQTL$avgDeltaSNP < 0), 1:4]
 # ---- 7. Annotate QTLs ----
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 
+orthologs_all <- process_qtl(sigQTL, 
+                             annotation, 
+                             refseq_flybase, 
+                             orthologs, 
+                             file.path("results", "supplementary_tables", 
+                                       paste0("orthologs_dana_dmel_all_regions_", 
+                                              timestamp, ".tsv")))
+
 orthologs_positive <- process_qtl(pos_QTL, 
                                   annotation, 
                                   refseq_flybase, 
@@ -189,28 +199,38 @@ orthologs_negative <- process_qtl(neg_QTL,
                                             timestamp, ".tsv")))
 
 # ---- 8. GO enrichment analysis ----
-GO_positive_data <- perform_GO_analysis(orthologs_positive, org.Dm.eg.db, "Positive")
-GO_negative_data <- perform_GO_analysis(orthologs_negative, org.Dm.eg.db, "Negative")
-GO_combined_data <- rbind(GO_positive_data, GO_negative_data)
+GO_all_regions <- perform_GO_analysis(orthologs_all, org.Dm.eg.db, "All")
+GO_positive_regions <- perform_GO_analysis(orthologs_positive, org.Dm.eg.db, "Positive")
+GO_negative_regions <- perform_GO_analysis(orthologs_negative, org.Dm.eg.db, "Negative")
+GO_combined_data <- rbind(GO_positive_regions, GO_negative_regions)
 
 # ---- 9. Visualize enriched GO-terms ----
-p1 <- plot_GO_bar(GO_positive_data,
-                 title = "GO terms of genes in regions with positive deltaSNP",
-                 n_terms = 25)
-
-p2 <- plot_GO_bar(GO_negative_data,
-                  title = "GO terms of genes in regions with negative deltaSNP",
+p1 <- plot_GO_bar(GO_all_regions,
+                  title = "Figure 4: GO terms of genes within significant QTL regions",
                   n_terms = 25)
 
-p3 <- plot_GO_point(GO_positive_data,
-        title = "GO terms of genes in regions with positive deltaSNP",
-        n_terms = 25)
+p2 <- plot_GO_bar(GO_positive_regions,
+                 title = "Figure S4: GO terms of genes in regions with positive deltaSNP",
+                 n_terms = 25)
 
-p4 <- plot_GO_point(GO_negative_data,
-        title = "GO terms of genes in regions with negative deltaSNP",
-        n_terms = 25)
+p3 <- plot_GO_bar(GO_negative_regions,
+                  title = "Figure S5: GO terms of genes in regions with negative deltaSNP",
+                  n_terms = 25)
+
+p4 <- plot_GO_point(GO_all_regions,
+                    title = "GO terms of genes within significant QTL regions",
+                    n_terms = 25)
+
+p5 <- plot_GO_point(GO_positive_regions,
+                    title = "GO terms of genes in regions with positive deltaSNP",
+                    n_terms = 25)
+
+p6 <- plot_GO_point(GO_negative_regions,
+                    title = "GO terms of genes in regions with negative deltaSNP",
+                    n_terms = 25)
 
 # ---- 9. Save key objects and plots----
+save_object(orthologs_all, "orthologs_all")
 save_object(orthologs_positive, "orthologs_positive")
 save_object(orthologs_negative, "orthologs_negative")
 save_object(GO_combined_data, "GO_combined_data")
@@ -223,6 +243,8 @@ print(p1)
 print(p2)
 print(p3)
 print(p4)
+print(p5)
+print(p6)
 
 dev.off()
 ##EOF

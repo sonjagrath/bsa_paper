@@ -2,6 +2,13 @@
 
 Vincent Ohlhauser
 
+## [26/02/25]
+
+### Changed
+
+- 02_QTL_Annotation[...] : Added GO bar and point plot for all genes within significant regions
+- 01.QTLseq_Analysis.R : Added Plot numbers to the plots from the main text
+
 ## [26/02/24]
 
 ### Added

@@ -112,13 +112,13 @@ gprime_results$CHROM <- factor(gprime_results$CHROM,
 p7 <- QTLseqr::plotQTLStats(qtl_results, var = "deltaSNP", plotIntervals = TRUE) + 
   theme_minimal() + 
   scale_color_manual(values = c("darkgrey", "red"))+
-  ggtitle("deltaSNP-index plot across the genome")
+  ggtitle("Figure 3B: deltaSNP-index plot across the genome")
 p8 <- QTLseqr::plotQTLStats(qtl_results, var = "nSNPs") + 
   theme_minimal() +
-  ggtitle("SNP density across genome within 1 Mb windows")
+  ggtitle("Figure 3A: SNP density across genome within 1 Mb windows")
 p9 <- QTLseqr::plotQTLStats(gprime_results, var = "Gprime", plotThreshold = TRUE) + 
   theme_minimal() +
-  ggtitle("G` value across the genome within 1 Mb windows")
+  ggtitle("Figure S3: G` value across the genome within 1 Mb windows")
 
 # ---- 10. Significant regions ----
 sigRegions_qtl <- QTLseqr::getSigRegions(qtl_results, method = "QTLseq")
