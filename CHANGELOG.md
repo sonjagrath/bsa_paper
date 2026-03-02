@@ -2,6 +2,12 @@
 
 Vincent Ohlhauser
 
+## [26/03/02]
+
+### Changed
+
+- 02_QTL_Annotation[...] : Changed pvalue cutoff in `enrichGO` to $0.01$ as given by Vera
+
 ## [26/02/25]
 
 ### Changed

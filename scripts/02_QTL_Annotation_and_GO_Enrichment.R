@@ -62,7 +62,7 @@ perform_enrichGO <- function(entrez_ids,
                             ont = ont,
                             readable = TRUE,
                             pAdjustMethod = "fdr",
-                            pvalueCutoff = 0.05,
+                            pvalueCutoff = 0.01,
                             qvalueCutoff = 0.05)
 }
 
