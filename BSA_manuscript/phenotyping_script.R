@@ -1,11 +1,11 @@
-data_CCRT <- read_excel("phenotype_RIL_IL.xlsx", sheet = "CCRT")
+data_CCRT <- read_excel("BSA_manuscript/phenotype_RIL_IL.xlsx", sheet = "CCRT")
 
 levels <- c("BKK5", "BKK6", "BKK10", "BKK12", 
             "BKK13", "BKK16", "BKK17", "BKK18", 
             "KATH14", "KATH19", "KATH23", 
             "RIL7", "RIL14", "RIL15", "RIL20", "RIL22", "RIL23", "RIL25", "RIL30", 
             "RIL41", "RIL47", "RIL50", "RIL57", "RIL58", "RIL80", "RIL81", "RIL93")
-data_CCRT$Line <- factor(data_CCRT$Line, levels = levels, labels = levels)
+data_CCRT$Line <- factor(data_CCRT$RIL, levels = levels, labels = levels)
 data_CCRT$Sex <- as.factor(data_CCRT$Sex)
 
 data_CCRT[which(data_CCRT$Line == "BKK5"),]$Root <- "FastBKK"
