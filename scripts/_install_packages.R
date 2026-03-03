@@ -4,6 +4,12 @@
 # Used by all analysis scripts in this project
 ##############################################
 
+# Check if the required build tools are installed
+if(!pkgbuild::has_build_tools()){
+  stop("Build tools not fount!\nWindows: Install Rtools\nmacOS: Run xcode-select --install.\n\n")
+}
+
+# required packages
 required_packages <- c(
   ## CRAN packages
   "tidyverse", # Data handling and visualization
@@ -34,18 +40,24 @@ if(!requireNamespace("pak", quietly = TRUE)){
   install.packages("pak", dependencies = TRUE)
 }
 
+# Check which packages are missing
+required_pkgs <- required_packages
+required_pkgs[length(required_pkgs)] <- "QTLseqr"
+missing_pkgs <- required_pkgs[!vapply(required_pkgs,
+                                          requireNamespace,
+                                          logical(1), quietly = TRUE)]
+
 # Install missing dependencies
-if (any(pak::pkg_status(required_packages)$diff != "OK")) {
+if (length(missing_pkgs) > 0) {
   pak::pkg_install(required_packages)
 }
 
 # Load all required packages
-required_packages[length(required_packages)] <- "QTLseqr"
-invisible(lapply(required_packages, library, character.only = TRUE))
+invisible(lapply(required_pkgs, library, character.only = TRUE))
 
 message("✅   All required packages are installed and loaded.")
 
 # remove handling objects
-rm(required_packages)
+rm(required_pkgs, required_packages, missing_pkgs)
 
 ###EOF

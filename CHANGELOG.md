@@ -2,6 +2,13 @@
 
 Vincent Ohlhauser
 
+## [26/03/03]
+
+### Changed
+
+- _install_packages.R : Fixed handling of missing packages (line 44-51)
+- _install_packages.R : Added handling of missing build tools at the top (L 8-10)
+
 ## [26/03/02]
 
 ### Changed
