@@ -8,6 +8,8 @@ Vincent Ohlhauser
 
 - _install_packages.R : Fixed handling of missing packages (line 44-51)
 - _install_packages.R : Added handling of missing build tools at the top (L 8-10)
+- 03_Supplemen[...] : Added code for calculating LTi50 and confidence intervals. Added plots and table including values
+- 03_Supplemen[...] : Added facet_grid to facet according to Population for better separation in plots
 
 ## [26/03/02]
 

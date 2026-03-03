@@ -84,8 +84,7 @@ CCRT$RIL <- factor(CCRT$RIL, levels = order)
 
 fig1 <- ggplot(CCRT, aes(x = as.factor(RIL), y = Time, color = Population))+
   geom_boxplot()+
-  geom_vline(xintercept = c(8.5, 11.5), linetype = "dashed")+
-  facet_wrap(~Sex)+
+  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
   labs(x = "Line",
        y = "Chill coma recovery time [min]",
        title = "Figure 1: Chill coma recovery time (in minutes) of iso-female and recombinant inbred lines.")+
@@ -130,10 +129,9 @@ fig2 <- ggplot(MORT, aes(x = Line, y = mortality, fill = Population, group = Lin
                fill = "white", color = "black")+
   geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 0.03,
                dotsize = 0.8)+
-  facet_wrap(~Sex)+
+  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
   scale_y_continuous(breaks = seq(0.0, 1.0, by = 0.1))+
   scale_fill_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
-  geom_vline(xintercept = c(8.5, 11.5), linetype = "dashed")+
   theme_bw()+
   labs(x = "Line", y = "Mortality [%]",
        title = "Figure 2: Percent mortality of iso-female and recombinant inbred lines")+
@@ -167,11 +165,73 @@ MORT_table <- MORT_table %>%
 colnames(MORT_table) <- c("Line", "Female mean Mortality", "Female St Dev", 
                           "Male mean Mortality", "Male St Dev")
 
-# ---- 9. Table with LTi50 values ----
-LTi50_table <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "LTi50_CS")%>%
-  select("Line", "Sex", "LTi50")%>%
-  mutate(LTi50 = round(LTi50, 2))%>%
-  pivot_wider(names_from = Sex, values_from = LTi50)
+# ---- 9. Calculation of LTi50 values, plot and table ----
+lti_ril <- read_excel("BSA_manuscript/phenotype_RIL_IL.xlsx", sheet = "RIL_Mortality")
+colnames(lti_ril)[1]<-"Line"
+lti_il <- read_excel("BSA_manuscript/phenotype_RIL_IL.xlsx", sheet = "IL_Mortality")
+
+LTI <- rbind(lti_ril, lti_il%>%filter(Time != 1 &  Time != 3))%>%
+  mutate(Total = 10)%>%
+  filter(Line != "unk")
+
+LTI_table <- data.frame()
+for (line in unique(LTI$Line)){
+  for (sex in unique(LTI$Sex)){
+    data <- LTI%>%filter(Line == line & Sex == sex)
+    
+    mod <- glm(cbind(Mortality, Total - Mortality) ~ Time, data, family="quasibinomial")
+    anova(mod, test="LRT")
+    
+    LT50 <- -mod$coef[1]/mod$coef[2]
+    grad <- c(-1/mod$coef[2], mod$coef[1]/(mod$coef[2]^2))
+    CI <- sqrt(t(grad) %*% vcov(mod) %*% grad) * 1.96
+    
+    LTI_table <- rbind(LTI_table, data.frame(Line = line, Sex = sex, LT50 = LT50, CI = CI))
+  }
+}
+
+order <- c("BKK5","BKK6","BKK10","BKK12","BKK13","BKK16","BKK17","BKK18",
+           "KATH14","KATH19","KATH23",
+           "RIL7","RIL14","RIL15","RIL20","RIL22","RIL23","RIL25",
+           "RIL30","RIL41","RIL47","RIL50","RIL57","RIL58","RIL80",
+           "RIL81","RIL93")
+
+LTI_table$Line <- factor(LTI_table$Line, levels = order)
+LTI_table <- mutate(LTI_table, Population = ifelse(grepl("BKK", Line), "BKK",
+                                     ifelse(grepl("RIL", Line), "RIL", "KATH")))%>%
+  na.omit()
+
+fig3 <- ggplot(LTI_table, aes(x = Line, y = LT50, color = Population))+
+  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
+  scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
+  stat_summary(fun = mean, geom = "bar",width = 0.6, fill = "white")+ 
+  geom_errorbar(aes(ymax = LT50 + CI, ymin = LT50 - CI), width = 0.4)+
+  labs(x = "Line", y = "LTi50",
+       title = "Figure 3: LTi50 values of iso-female and recombinant inbred lines (RIL)")+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "bottom",
+        strip.background = element_rect(fill = "white"))
+  
+figS3 <- ggplot(LTI_table, aes(x = Sex, y = LT50))+
+    geom_boxplot()+
+    geom_point(aes(colour = Sex))+
+    geom_line(aes(group = Line), color = "darkgrey")+
+    labs(y = "LTi50 values",
+         title = "Figure S2: Boxplot for LTi50 values")+
+    scale_color_manual(values = c("purple", "orange"))+
+    theme_bw()+
+    theme(panel.grid = element_blank(),
+          legend.position = "none")
+
+LTI_table <- pivot_wider(LTI_table, names_from = Sex, values_from = c(LT50, CI))%>%
+  select(Line, LT50_Female, CI_Female, LT50_Male, CI_Male)%>%
+  arrange(Line)%>%
+  mutate(LT50_Female = round(LT50_Female,2),
+         LT50_Male = round(LT50_Male,2))
+colnames(LTI_table) <- c("Line", "Female LTi50", "Female confidence interval",
+                         "Male LTi50", "Male confidence interval")
 
 # ---- 10. Write additional tables and plots to pdf ----
 out_pdf <- file.path("results", "supplementary_tables", 
@@ -195,7 +255,7 @@ style_table(MORT_table,
             The mortality represents number of dead flies in groups of 10. RIL founder populations: BKK12 and BKK13. 
             Paired t-test comparing mean mortality in males and female: p-value = 0.02697 (t = -2.3444, df = 26)")
 
-style_table(LTi50_table,
+style_table(LTI_table,
             "Table S3: Lethal time (LTi50) -in hours- for female and male flies of BKK, KATH, and RIL strains. RIL founder populations: BKK12 and BKK13.")
 
 dev.off()
@@ -206,6 +266,7 @@ pdf(out_pdf, width = 15, height = 8)
 
 print(fig1)
 print(fig2)
+print(fig3)
 
 dev.off()
 
@@ -215,6 +276,7 @@ pdf(out_pdf, width = 8, height = 8)
 
 print(figS1)
 print(figS2)
+print(figS3)
 
 dev.off()
 ###EOF
