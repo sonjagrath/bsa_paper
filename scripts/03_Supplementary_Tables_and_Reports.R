@@ -38,12 +38,8 @@ timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 
 GO_combined_data <- import_newest_object("GO_combined_data")
 GeneID_combined_data <- GO_combined_data[, c("ID", "Description", "geneID", 
-                                             "Region", "p.adjust", "Ontology")]
-write_xlsx(GeneID_combined_data, file.path("results", 
-                                           "supplementary_tables", 
-                                           paste0("GeneID_combined_data_", 
-                                                  timestamp,
-                                                  ".xlsx")))
+                                             "p.adjust", "Ontology", "Region")]
+
 save_object(GeneID_combined_data, "GeneID_combined_data")
 
 # ---- 3. Significant QTL table ----
@@ -77,6 +73,8 @@ order <- c("BKK5","BKK6","BKK10","BKK12","BKK13","BKK16","BKK17","BKK18",
            "RIL30","RIL41","RIL47","RIL50","RIL57","RIL58","RIL80",
            "RIL81","RIL93")
 
+seq_lines <- c("BKK12", "BKK13", "RIL7","RIL14","RIL15","RIL20","RIL22","RIL23")
+
 CCRT <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "CCRT")%>%
   mutate(Population = ifelse(grepl("BKK", RIL), "BKK",
                              ifelse(grepl("RIL", RIL), "RIL", "KATH")))
@@ -105,6 +103,9 @@ figS1 <- ggplot(CCRT_table, aes(x = Sex, y = mean_T))+
   geom_boxplot()+
   geom_point(aes(colour = Sex))+
   geom_line(aes(group = RIL), color = "darkgrey")+
+  geom_signif(comparisons = list(c("Male", "Female")),
+              map_signif_level = FALSE, test = "t.test",
+              test.args = list(paired = TRUE))+
   scale_y_continuous(breaks = seq(5, 95, by = 10))+
   labs(y = "Mean CCRT [min]",
        title = "Figure S1: Boxplot for mean CCRT. ")+
@@ -125,10 +126,11 @@ MORT <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "CS")%>%
 MORT$Line <- factor(MORT$Line, levels = order)
 
 fig2 <- ggplot(MORT, aes(x = Line, y = mortality, fill = Population, group = Line))+
-  stat_summary(fun = mean, geom = "bar",width = 0.6,
-               fill = "white", color = "black")+
+  #stat_summary(fun = mean, geom = "bar",width = 0.6,
+  #             fill = "white", color = "black")+
+  geom_boxplot(fill="white")+
   geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 0.03,
-               dotsize = 0.8)+
+               dotsize = 0.6)+
   facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
   scale_y_continuous(breaks = seq(0.0, 1.0, by = 0.1))+
   scale_fill_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
@@ -149,6 +151,9 @@ figS2 <- ggplot(MORT_table, aes(x = Sex, y = mean_M))+
   geom_boxplot()+
   geom_point(aes(colour = Sex))+
   geom_line(aes(group = Line), color = "darkgrey")+
+  geom_signif(comparisons = list(c("Male", "Female")),
+              map_signif_level = FALSE, test = "t.test",
+              test.args = list(paired = TRUE))+
   labs(y = "Mean mortality",
        title = "Figure S2: Boxplot for mean mortality upon 8-hour cold shock")+
   scale_color_manual(values = c("purple", "orange"))+
@@ -172,7 +177,8 @@ lti_il <- read_excel("BSA_manuscript/phenotype_RIL_IL.xlsx", sheet = "IL_Mortali
 
 LTI <- rbind(lti_ril, lti_il%>%filter(Time != 1 &  Time != 3))%>%
   mutate(Total = 10)%>%
-  filter(Line != "unk")
+  mutate(Line = factor(Line, levels = order))%>%
+  arrange(Line)%>% na.omit()
 
 LTI_table <- data.frame()
 for (line in unique(LTI$Line)){
@@ -190,16 +196,9 @@ for (line in unique(LTI$Line)){
   }
 }
 
-order <- c("BKK5","BKK6","BKK10","BKK12","BKK13","BKK16","BKK17","BKK18",
-           "KATH14","KATH19","KATH23",
-           "RIL7","RIL14","RIL15","RIL20","RIL22","RIL23","RIL25",
-           "RIL30","RIL41","RIL47","RIL50","RIL57","RIL58","RIL80",
-           "RIL81","RIL93")
-
 LTI_table$Line <- factor(LTI_table$Line, levels = order)
 LTI_table <- mutate(LTI_table, Population = ifelse(grepl("BKK", Line), "BKK",
-                                     ifelse(grepl("RIL", Line), "RIL", "KATH")))%>%
-  na.omit()
+                                     ifelse(grepl("RIL", Line), "RIL", "KATH")))
 
 fig3 <- ggplot(LTI_table, aes(x = Line, y = LT50, color = Population))+
   facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
@@ -218,6 +217,9 @@ figS3 <- ggplot(LTI_table, aes(x = Sex, y = LT50))+
     geom_boxplot()+
     geom_point(aes(colour = Sex))+
     geom_line(aes(group = Line), color = "darkgrey")+
+    geom_signif(comparisons = list(c("Male", "Female")),
+                map_signif_level = FALSE, test = "t.test",
+                test.args = list(paired = TRUE))+
     labs(y = "LTi50 values",
          title = "Figure S2: Boxplot for LTi50 values")+
     scale_color_manual(values = c("purple", "orange"))+
@@ -233,32 +235,66 @@ LTI_table <- pivot_wider(LTI_table, names_from = Sex, values_from = c(LT50, CI))
 colnames(LTI_table) <- c("Line", "Female LTi50", "Female confidence interval",
                          "Male LTi50", "Male confidence interval")
 
-# ---- 10. Write additional tables and plots to pdf ----
-out_pdf <- file.path("results", "supplementary_tables", 
-                     paste0("03_Supplementary_tables_", timestamp, ".pdf"))
-pdf(out_pdf, width = 14, height = 10)
+# ---- 10. Write additional tables and plots to xlsx ----
+out_xlsx <- file.path("results", "supplementary_tables", 
+                     paste0("03_Supplementary_tables_", timestamp, ".xlsx"))
 
-style_table(qtl_table, "Table of significant QTL regions")
+wb <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb, "Table S1")
+openxlsx::writeData(wb, "Table S1", "Table S1: Sequencing quality control summary",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S1", QC_rawdata,
+                    startRow = 3, startCol = 1)
 
-style_table(VCF_File_Statistics_Combined, 
-            "Variant calling summary table")
+openxlsx::addWorksheet(wb, "Table S2")
+openxlsx::writeData(wb, "Table S2", "Table S2: Summary of variant calling on the RIL sequencing data",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S2", VCF_File_Statistics_Combined,
+                    startRow = 3, startCol = 1)
 
-style_table(QC_rawdata, "Sequencing quality control information")
+openxlsx::addWorksheet(wb, "Table S3")
+openxlsx::writeData(wb, "Table S3", "Table S3: Quantitative trait loci determined by QTLseqr",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S3", qtl_table,
+                    startRow = 3, startCol = 1)
 
-style_table(CCRT_table, 
-            "Table S1: Mean chill coma recovery time (CCRT) and standard deviation of female and male flies of strains. 
-            RIL founder populations: BKK12 and BKK13. 
-            Paired t-test comparing mean CCRT in males and female: p-value = 0.07737 (t = -1.839, df = 26)")
+openxlsx::addWorksheet(wb, "Table S4")
+openxlsx::writeData(wb, "Table S4", "Table S4: Gene ontology term enrichment results for terms enriched in positive and negative deltaSNP regions determined by QTLseqr.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S4", QC_rawdata,
+                    startRow = 3, startCol = 1)
 
-style_table(MORT_table,
-            "Table S2: Mean mortality upon 8-hour cold shock and standard deviation of female and male flies of strains.
-            The mortality represents number of dead flies in groups of 10. RIL founder populations: BKK12 and BKK13. 
-            Paired t-test comparing mean mortality in males and female: p-value = 0.02697 (t = -2.3444, df = 26)")
+openxlsx::addWorksheet(wb, "Table S5")
+openxlsx::writeData(wb, "Table S5", "Table S5: Raw cold shock recovery times for all lines examined during the study, separated by sex.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S5", CCRT,
+                    startRow = 3, startCol = 1)
 
-style_table(LTI_table,
-            "Table S3: Lethal time (LTi50) -in hours- for female and male flies of BKK, KATH, and RIL strains. RIL founder populations: BKK12 and BKK13.")
+openxlsx::addWorksheet(wb, "Table S6")
+openxlsx::writeData(wb, "Table S6", "Table S6: Cold shock recovery times with standard devaition separated by sex for all strains examined during the study.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S6", CCRT_table,
+                    startRow = 3, startCol = 1)
 
-dev.off()
+openxlsx::addWorksheet(wb, "Table S7")
+openxlsx::writeData(wb, "Table S7", "Table S7: Raw mortality data for 2, 4, 6, 8, 12 and 24 h cold shock separated by sex.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S7", LTI,
+                    startRow = 3, startCol = 1)
+
+openxlsx::addWorksheet(wb, "Table S8")
+openxlsx::writeData(wb, "Table S8", "Table S8: Mortality upon 8h cold shock for all lines examined during the study.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S8", MORT_table,
+                    startRow = 3, startCol = 1)
+
+openxlsx::addWorksheet(wb, "Table S9")
+openxlsx::writeData(wb, "Table S9", "Table S9: LTi50 values and confidence intervals for males and females of all strains examined during the study.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S9", LTI_table,
+                    startRow = 3, startCol = 1)
+
+saveWorkbook(wb, out_xlsx, overwrite = FALSE)
 
 out_pdf <- file.path("results", "plots", 
                      paste0("03_Main_plots_", timestamp, ".pdf"))

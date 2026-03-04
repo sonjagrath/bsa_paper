@@ -2,6 +2,14 @@
 
 Vincent Ohlhauser
 
+## [26/03/04]
+
+### Changed
+
+- 03_Supplemen[...] : Saved supplementary tables to xlsx instead of pdf with openxlsx
+- 03_Supplemen[...] : removed Additional lines from Lti50 data
+- 03_Supplemen[...] : Added geom_signif to plots S1-S3
+
 ## [26/03/03]
 
 ### Changed
