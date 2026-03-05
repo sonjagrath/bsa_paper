@@ -129,16 +129,14 @@ MORT <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "CS")%>%
 MORT$Line <- factor(MORT$Line, levels = order)
 
 fig2 <- ggplot(MORT%>%mutate(mortality=mortality*100), aes(x = Line, y = mortality, fill = Population, group = Line))+
-  #stat_summary(fun = mean, geom = "bar",width = 0.6,
-  #             fill = "white", color = "black")+
   geom_boxplot(aes(color = Population),fill="white")+
   geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 0.03,
-               dotsize = 0.6)+
+               dotsize = 60)+
   ggh4x::facet_nested(.~Sex + Population, scales = "free_x", space = "free_x")+
   scale_x_discrete(labels = function(x){
     ifelse(x %in% seq_lines,
            paste0("<b>", x, "</b>"), x)})+
-  scale_y_continuous(breaks = seq(0.0, 1.0, by = 0.1))+
+  scale_y_continuous(breaks = seq(0.0, 100, by = 10))+
   scale_fill_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   theme_bw()+
@@ -148,7 +146,6 @@ fig2 <- ggplot(MORT%>%mutate(mortality=mortality*100), aes(x = Line, y = mortali
         axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1),
         legend.position = "bottom",
         strip.background = element_rect(fill = "white"))
-
 MORT_table <- MORT%>%
   group_by(Line, Sex)%>%
   summarize(mean_M = mean(mortality),
