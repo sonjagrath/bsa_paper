@@ -128,7 +128,7 @@ MORT <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "CS")%>%
   mutate(Population = Root)
 MORT$Line <- factor(MORT$Line, levels = order)
 
-fig2 <- ggplot(MORT, aes(x = Line, y = mortality, fill = Population, group = Line))+
+fig2 <- ggplot(MORT%>%mutate(mortality=mortality*100), aes(x = Line, y = mortality, fill = Population, group = Line))+
   #stat_summary(fun = mean, geom = "bar",width = 0.6,
   #             fill = "white", color = "black")+
   geom_boxplot(aes(color = Population),fill="white")+
@@ -143,7 +143,7 @@ fig2 <- ggplot(MORT, aes(x = Line, y = mortality, fill = Population, group = Lin
   scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   theme_bw()+
   labs(x = "Line", y = "Mortality [%]",
-       title = "Figure 2: Percent mortality of iso-female and recombinant inbred lines")+
+       title = "Figure 2: Percent mortality of iso-female and recombinant inbred lines after 8 h cold shock")+
   theme(panel.grid = element_blank(),
         axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1),
         legend.position = "bottom",
@@ -215,7 +215,7 @@ fig3 <- ggplot(LTI_table, aes(x = Line, y = LT50, color = Population))+
   scale_x_discrete(labels = function(x){
     ifelse(x %in% seq_lines,
            paste0("<b>", x, "</b>"), x)})+
-  labs(x = "Line", y = "LTi50",
+  labs(x = "Line", y = "LTi50 [h]",
        title = "Figure 3: LTi50 values of iso-female and recombinant inbred lines (RIL)")+
   theme_bw()+
   theme(panel.grid = element_blank(),
