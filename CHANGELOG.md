@@ -2,6 +2,16 @@
 
 Vincent Ohlhauser
 
+## [26/03/05]
+
+## Changed:
+
+- _install_packages.R : Added "ggh4x" package for facet_nested() function and "ggtext" for element_markdown()
+- 03_Supplemen[...] : Put supplementary plots together using patchwork
+- 03_Supplemen[...] : Faceted main plots using facet_nested()
+- 03_Supplemen[...] : Highlighted strains in fig1-3 with bold x-axis labels using ggtext::element_markdown()
+- setup_project.R : removed folders that have Github content
+
 ## [26/03/04]
 
 ### Changed

@@ -22,10 +22,8 @@ message(paste0("Creating project folder structure in:", PROJECT_ROOT))
 
 # Create main directories
 dir.create("data/raw")
-dir.create("data/processed")
 dir.create("results")
 dir.create("results/plots")
 dir.create("results/supplementary_tables")
 dir.create("results/logs")
 dir.create("objects")
-dir.create("scripts")

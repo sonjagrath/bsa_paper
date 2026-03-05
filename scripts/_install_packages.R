@@ -14,6 +14,8 @@ required_packages <- c(
   ## CRAN packages
   "tidyverse", # Data handling and visualization
   "ggpubr", # visualization
+  "ggh4x",
+  "ggtext",
   "writexl", # Import and export utilities
   "readxl",
   "openxlsx",

@@ -82,7 +82,10 @@ CCRT$RIL <- factor(CCRT$RIL, levels = order)
 
 fig1 <- ggplot(CCRT, aes(x = as.factor(RIL), y = Time, color = Population))+
   geom_boxplot()+
-  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
+  ggh4x::facet_nested(.~Sex + Population, scales = "free_x", space = "free_x")+
+  scale_x_discrete(labels = function(x){
+    ifelse(x %in% seq_lines,
+           paste0("<b>", x, "</b>"), x)})+
   labs(x = "Line",
        y = "Chill coma recovery time [min]",
        title = "Figure 1: Chill coma recovery time (in minutes) of iso-female and recombinant inbred lines.")+
@@ -90,7 +93,7 @@ fig1 <- ggplot(CCRT, aes(x = as.factor(RIL), y = Time, color = Population))+
   scale_y_continuous(breaks = seq(5, 95, by = 10))+
   scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1),
         strip.background = element_rect(fill = "white"),
         legend.position = "bottom")
 
@@ -108,7 +111,7 @@ figS1 <- ggplot(CCRT_table, aes(x = Sex, y = mean_T))+
               test.args = list(paired = TRUE))+
   scale_y_continuous(breaks = seq(5, 95, by = 10))+
   labs(y = "Mean CCRT [min]",
-       title = "Figure S1: Boxplot for mean CCRT. ")+
+       title = "Mean CCRT ")+
   scale_color_manual(values = c("purple", "orange"))+
   theme_bw()+
   theme(panel.grid = element_blank(),
@@ -128,17 +131,21 @@ MORT$Line <- factor(MORT$Line, levels = order)
 fig2 <- ggplot(MORT, aes(x = Line, y = mortality, fill = Population, group = Line))+
   #stat_summary(fun = mean, geom = "bar",width = 0.6,
   #             fill = "white", color = "black")+
-  geom_boxplot(fill="white")+
+  geom_boxplot(aes(color = Population),fill="white")+
   geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 0.03,
                dotsize = 0.6)+
-  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
+  ggh4x::facet_nested(.~Sex + Population, scales = "free_x", space = "free_x")+
+  scale_x_discrete(labels = function(x){
+    ifelse(x %in% seq_lines,
+           paste0("<b>", x, "</b>"), x)})+
   scale_y_continuous(breaks = seq(0.0, 1.0, by = 0.1))+
   scale_fill_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
+  scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   theme_bw()+
   labs(x = "Line", y = "Mortality [%]",
        title = "Figure 2: Percent mortality of iso-female and recombinant inbred lines")+
   theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1),
         legend.position = "bottom",
         strip.background = element_rect(fill = "white"))
 
@@ -147,15 +154,15 @@ MORT_table <- MORT%>%
   summarize(mean_M = mean(mortality),
             sd_M = sd(mortality))
 
-figS2 <- ggplot(MORT_table, aes(x = Sex, y = mean_M))+
+figS2 <- ggplot(MORT_table%>%mutate(mean_M=mean_M*100), aes(x = Sex, y = mean_M))+
   geom_boxplot()+
   geom_point(aes(colour = Sex))+
   geom_line(aes(group = Line), color = "darkgrey")+
   geom_signif(comparisons = list(c("Male", "Female")),
               map_signif_level = FALSE, test = "t.test",
               test.args = list(paired = TRUE))+
-  labs(y = "Mean mortality",
-       title = "Figure S2: Boxplot for mean mortality upon 8-hour cold shock")+
+  labs(y = "Mean mortality [%]",
+       title = "Mean mortality upon 8-hour cold shock")+
   scale_color_manual(values = c("purple", "orange"))+
   theme_bw()+
   theme(panel.grid = element_blank(),
@@ -201,17 +208,20 @@ LTI_table <- mutate(LTI_table, Population = ifelse(grepl("BKK", Line), "BKK",
                                      ifelse(grepl("RIL", Line), "RIL", "KATH")))
 
 fig3 <- ggplot(LTI_table, aes(x = Line, y = LT50, color = Population))+
-  facet_grid(.~Sex + Population, scales = "free_x", space = "free_x")+
+  ggh4x::facet_nested(.~Sex + Population, scales = "free_x", space = "free_x")+
   scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
   stat_summary(fun = mean, geom = "bar",width = 0.6, fill = "white")+ 
   geom_errorbar(aes(ymax = LT50 + CI, ymin = LT50 - CI), width = 0.4)+
+  scale_x_discrete(labels = function(x){
+    ifelse(x %in% seq_lines,
+           paste0("<b>", x, "</b>"), x)})+
   labs(x = "Line", y = "LTi50",
        title = "Figure 3: LTi50 values of iso-female and recombinant inbred lines (RIL)")+
   theme_bw()+
   theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
         legend.position = "bottom",
-        strip.background = element_rect(fill = "white"))
+        strip.background = element_rect(fill = "white"),
+        axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1))
   
 figS3 <- ggplot(LTI_table, aes(x = Sex, y = LT50))+
     geom_boxplot()+
@@ -220,12 +230,13 @@ figS3 <- ggplot(LTI_table, aes(x = Sex, y = LT50))+
     geom_signif(comparisons = list(c("Male", "Female")),
                 map_signif_level = FALSE, test = "t.test",
                 test.args = list(paired = TRUE))+
-    labs(y = "LTi50 values",
-         title = "Figure S2: Boxplot for LTi50 values")+
+    labs(y = "LTi50 values [h]",
+         title = "LTi50 values")+
     scale_color_manual(values = c("purple", "orange"))+
     theme_bw()+
     theme(panel.grid = element_blank(),
-          legend.position = "none")
+          legend.position = "none",
+          axis.text.x = ggtext::element_markdown())
 
 LTI_table <- pivot_wider(LTI_table, names_from = Sex, values_from = c(LT50, CI))%>%
   select(Line, LT50_Female, CI_Female, LT50_Male, CI_Male)%>%
@@ -297,22 +308,15 @@ openxlsx::writeData(wb, "Table S9", LTI_table,
 saveWorkbook(wb, out_xlsx, overwrite = FALSE)
 
 out_pdf <- file.path("results", "plots", 
-                     paste0("03_Main_plots_", timestamp, ".pdf"))
+                     paste0("03_Plots_", timestamp, ".pdf"))
 pdf(out_pdf, width = 15, height = 8)
 
 print(fig1)
 print(fig2)
 print(fig3)
-
-dev.off()
-
-out_pdf <- file.path("results", "plots", 
-                     paste0("03_Supplementary_plots_", timestamp, ".pdf"))
-pdf(out_pdf, width = 8, height = 8)
-
-print(figS1)
-print(figS2)
-print(figS3)
+print(figS1 + figS2 + figS3 +
+        patchwork::plot_annotation(tag_levels = "A",
+                                   title = "Boxplots comparing Male and Female mean CCRT, mean mortality and LTi50"))
 
 dev.off()
 ###EOF
