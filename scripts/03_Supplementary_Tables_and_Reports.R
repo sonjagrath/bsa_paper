@@ -269,7 +269,7 @@ openxlsx::writeData(wb, "Table S3", qtl_table,
 openxlsx::addWorksheet(wb, "Table S4")
 openxlsx::writeData(wb, "Table S4", "Table S4: Gene ontology term enrichment results for terms enriched in positive and negative deltaSNP regions determined by QTLseqr.",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S4", QC_rawdata,
+openxlsx::writeData(wb, "Table S4", GeneID_combined_data,
                     startRow = 3, startCol = 1)
 
 openxlsx::addWorksheet(wb, "Table S5")
@@ -305,7 +305,7 @@ openxlsx::writeData(wb, "Table S9", LTI_table,
 saveWorkbook(wb, out_xlsx, overwrite = FALSE)
 
 out_pdf <- file.path("results", "plots", 
-                     paste0("03_Plots_", timestamp, ".pdf"))
+                     paste0("03_Phenotyping_plots_", timestamp, ".pdf"))
 pdf(out_pdf, width = 15, height = 8)
 
 print(fig1)
@@ -317,3 +317,29 @@ print(figS1 + figS2 + figS3 +
 
 dev.off()
 ###EOF
+pdf(width = 10,
+    height = 15)
+f1 <- fig1+theme(legend.position = "none")+labs(title=element_blank(),x="")
+f2 <- fig2+theme(legend.position = "none")+labs(title=element_blank(),x="")
+f3 <- fig3+theme(legend.position = "none")+labs(title=element_blank())
+f1 / f2 / f3 +
+  patchwork::plot_annotation(tag_levels = "A")
+dev.off()
+pdf(width = 10,
+    height = 5)
+f1
+f2
+f3
+dev.off()
+
+pdf(width = 10, height = 5)
+a<-figS1+ggtitle(element_blank())
+b<-figS2+ggtitle(element_blank())
+c<-figS3+ggtitle(element_blank())
+a+b+c+
+  patchwork::plot_annotation(tag_levels = "A")
+dev.off()
+
+pdf(width = 10, height = 10)
+fig3 / fig3b
+dev.off()
