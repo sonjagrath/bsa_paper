@@ -317,29 +317,3 @@ print(figS1 + figS2 + figS3 +
 
 dev.off()
 ###EOF
-pdf(width = 10,
-    height = 15)
-f1 <- fig1+theme(legend.position = "none")+labs(title=element_blank(),x="")
-f2 <- fig2+theme(legend.position = "none")+labs(title=element_blank(),x="")
-f3 <- fig3+theme(legend.position = "none")+labs(title=element_blank())
-f1 / f2 / f3 +
-  patchwork::plot_annotation(tag_levels = "A")
-dev.off()
-pdf(width = 10,
-    height = 5)
-f1
-f2
-f3
-dev.off()
-
-pdf(width = 10, height = 5)
-a<-figS1+ggtitle(element_blank())
-b<-figS2+ggtitle(element_blank())
-c<-figS3+ggtitle(element_blank())
-a+b+c+
-  patchwork::plot_annotation(tag_levels = "A")
-dev.off()
-
-pdf(width = 10, height = 10)
-fig3 / fig3b
-dev.off()
