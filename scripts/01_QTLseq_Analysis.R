@@ -150,3 +150,19 @@ print(p9)
 
 dev.off()
 ###EOF
+
+pdf(width = 10,height = 10)
+(p8+ggtitle(element_blank())) / (p7+ggtitle(element_blank()))+
+  patchwork::plot_annotation(tag_levels = "A")
+dev.off()
+
+pdf(width = 10,height = 5)
+p9+ggtitle(element_blank())
+dev.off()
+
+pa <- p8 +ggtitle(element_blank())
+pb <- p7 +ggtitle(element_blank())
+pc <- p9+ggtitle(element_blank())
+pa / pb +
+  patchwork::plot_annotation(tag_levels = "A")
+pc

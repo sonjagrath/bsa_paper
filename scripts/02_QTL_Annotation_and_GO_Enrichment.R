@@ -206,15 +206,15 @@ GO_combined_data <- rbind(GO_positive_regions, GO_negative_regions)
 
 # ---- 9. Visualize enriched GO-terms ----
 p1 <- plot_GO_bar(GO_all_regions,
-                  title = "Figure 4: GO terms of genes within significant QTL regions",
+                  title = "Figure 3: GO terms of genes within significant QTL regions",
                   n_terms = 25)
 
 p2 <- plot_GO_bar(GO_positive_regions,
-                 title = "Figure S4: GO terms of genes in regions with positive deltaSNP",
+                 title = "Figure S3: GO terms of genes in regions with positive deltaSNP",
                  n_terms = 25)
 
 p3 <- plot_GO_bar(GO_negative_regions,
-                  title = "Figure S5: GO terms of genes in regions with negative deltaSNP",
+                  title = "Figure S4: GO terms of genes in regions with negative deltaSNP",
                   n_terms = 25)
 
 p4 <- plot_GO_point(GO_all_regions,
@@ -247,4 +247,21 @@ print(p5)
 print(p6)
 
 dev.off()
+
 ##EOF
+
+
+pdf(width = 10, height = 5)
+p1+labs(title=element_blank())+theme(axis.text.x=element_text(angle = 70, hjust = 1, vjust = 1))
+dev.off()
+
+
+pdf(width = 10, height = 5)
+p2+labs(title=element_blank())+theme(axis.text.x=element_text(angle = 70, hjust = 1, vjust = 1))
+p3+labs(title=element_blank())+theme(axis.text.x=element_text(angle = 70, hjust = 1, vjust = 1))
+dev.off()
+
+pdf("figS4.pdf", width = 10, height = 4)
+p3 + ggtitle(element_blank())+
+  theme(plot.margin = margin(t = 2, r = 2, b = 2, l = 20))
+dev.off()

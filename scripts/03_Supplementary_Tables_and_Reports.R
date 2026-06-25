@@ -69,11 +69,11 @@ QC_rawdata <- data.frame(
 # ---- 7. Table with CCRT values, main and supplementary CCRT plots ----
 order <- c("BKK5","BKK6","BKK10","BKK12","BKK13","BKK16","BKK17","BKK18",
            "KATH14","KATH19","KATH23",
-           "RIL7","RIL14","RIL15","RIL20","RIL22","RIL23","RIL25",
-           "RIL30","RIL41","RIL47","RIL50","RIL57","RIL58","RIL80",
-           "RIL81","RIL93")
+           "RIL57","RIL23","RIL22","RIL41","RIL50","RIL25","RIL20",
+           "RIL30","RIL15","RIL47","RIL7","RIL81","RIL14","RIL58",
+           "RIL93","RIL90", "RIL80")
 
-seq_lines <- c("BKK12", "BKK13", "RIL7","RIL14","RIL15","RIL20","RIL22","RIL23")
+seq_lines <- c("BKK12", "BKK13")
 
 CCRT <- read_excel("data/raw/phenotype_RIL_IL.xlsx", sheet = "CCRT")%>%
   mutate(Population = ifelse(grepl("BKK", RIL), "BKK",
@@ -207,16 +207,15 @@ LTI_table <- mutate(LTI_table, Population = ifelse(grepl("BKK", Line), "BKK",
 fig3 <- ggplot(LTI_table, aes(x = Line, y = LT50, color = Population))+
   ggh4x::facet_nested(.~Sex + Population, scales = "free_x", space = "free_x")+
   scale_color_manual(values = c("darkblue", "seagreen", "yellowgreen"))+
-  stat_summary(fun = mean, geom = "bar",width = 0.6, fill = "white")+ 
+  geom_point()+
   geom_errorbar(aes(ymax = LT50 + CI, ymin = LT50 - CI), width = 0.4)+
   scale_x_discrete(labels = function(x){
     ifelse(x %in% seq_lines,
            paste0("<b>", x, "</b>"), x)})+
-  labs(x = "Line", y = "LTi50 [h]",
-       title = "Figure 3: LTi50 values of iso-female and recombinant inbred lines (RIL)")+
+  labs(x = "Line", y = "LTi50 [h]")+
   theme_bw()+
   theme(panel.grid = element_blank(),
-        legend.position = "bottom",
+        legend.position = "none",
         strip.background = element_rect(fill = "white"),
         axis.text.x = ggtext::element_markdown(angle = 90, vjust = 0.5, hjust = 1))
   
@@ -248,61 +247,61 @@ out_xlsx <- file.path("results", "supplementary_tables",
                      paste0("03_Supplementary_tables_", timestamp, ".xlsx"))
 
 wb <- openxlsx::createWorkbook()
-openxlsx::addWorksheet(wb, "Table S1")
-openxlsx::writeData(wb, "Table S1", "Table S1: Sequencing quality control summary",
-                    startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S1", QC_rawdata,
-                    startRow = 3, startCol = 1)
-
-openxlsx::addWorksheet(wb, "Table S2")
-openxlsx::writeData(wb, "Table S2", "Table S2: Summary of variant calling on the RIL sequencing data",
-                    startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S2", VCF_File_Statistics_Combined,
-                    startRow = 3, startCol = 1)
-
-openxlsx::addWorksheet(wb, "Table S3")
-openxlsx::writeData(wb, "Table S3", "Table S3: Quantitative trait loci determined by QTLseqr",
-                    startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S3", qtl_table,
-                    startRow = 3, startCol = 1)
-
-openxlsx::addWorksheet(wb, "Table S4")
-openxlsx::writeData(wb, "Table S4", "Table S4: Gene ontology term enrichment results for terms enriched in positive and negative deltaSNP regions determined by QTLseqr.",
-                    startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S4", GeneID_combined_data,
-                    startRow = 3, startCol = 1)
-
 openxlsx::addWorksheet(wb, "Table S5")
-openxlsx::writeData(wb, "Table S5", "Table S5: Raw cold shock recovery times for all lines examined during the study, separated by sex.",
+openxlsx::writeData(wb, "Table S5", "Table S5: Sequencing quality control summary",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S5", CCRT,
+openxlsx::writeData(wb, "Table S5", QC_rawdata,
                     startRow = 3, startCol = 1)
 
 openxlsx::addWorksheet(wb, "Table S6")
-openxlsx::writeData(wb, "Table S6", "Table S6: Cold shock recovery times with standard devaition separated by sex for all strains examined during the study.",
+openxlsx::writeData(wb, "Table S6", "Table S6: Summary of variant calling on the RIL sequencing data",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S6", CCRT_table,
+openxlsx::writeData(wb, "Table S6", VCF_File_Statistics_Combined,
                     startRow = 3, startCol = 1)
 
 openxlsx::addWorksheet(wb, "Table S7")
-openxlsx::writeData(wb, "Table S7", "Table S7: Raw mortality data for 2, 4, 6, 8, 12 and 24 h cold shock separated by sex.",
+openxlsx::writeData(wb, "Table S7", "Table S7: Quantitative trait loci determined by QTLseqr",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S7", LTI,
+openxlsx::writeData(wb, "Table S7", qtl_table,
                     startRow = 3, startCol = 1)
 
 openxlsx::addWorksheet(wb, "Table S8")
-openxlsx::writeData(wb, "Table S8", "Table S8: Mortality upon 8h cold shock for all lines examined during the study.",
+openxlsx::writeData(wb, "Table S8", "Table S8: Gene ontology term enrichment results for terms enriched in positive and negative deltaSNP regions determined by QTLseqr.",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S8", MORT_table,
+openxlsx::writeData(wb, "Table S8", GeneID_combined_data,
                     startRow = 3, startCol = 1)
 
 openxlsx::addWorksheet(wb, "Table S9")
-openxlsx::writeData(wb, "Table S9", "Table S9: LTi50 values and confidence intervals for males and females of all strains examined during the study.",
+openxlsx::writeData(wb, "Table S9", "Table S5: Raw cold shock recovery times for all lines examined during the study, separated by sex.",
                     startRow = 1, startCol = 1)
-openxlsx::writeData(wb, "Table S9", LTI_table,
+openxlsx::writeData(wb, "Table S9", CCRT,
                     startRow = 3, startCol = 1)
 
-saveWorkbook(wb, out_xlsx, overwrite = FALSE)
+#openxlsx::addWorksheet(wb, "Table S6")
+#openxlsx::writeData(wb, "Table S6", "Table S6: Cold shock recovery times with standard devaition separated by sex for all strains examined during the study.",
+#                    startRow = 1, startCol = 1)
+#openxlsx::writeData(wb, "Table S6", CCRT_table,
+#                    startRow = 3, startCol = 1)
+
+openxlsx::addWorksheet(wb, "Table S10")
+openxlsx::writeData(wb, "Table S10", "Table S10: Raw mortality data for 2, 4, 6, 8, 12 and 24 h cold shock separated by sex.",
+                    startRow = 1, startCol = 1)
+openxlsx::writeData(wb, "Table S10", LTI,
+                    startRow = 3, startCol = 1)
+
+#openxlsx::addWorksheet(wb, "Table S8")
+#openxlsx::writeData(wb, "Table S8", "Table S8: Mortality upon 8h cold shock for all lines examined during the study.",
+#                    startRow = 1, startCol = 1)
+#openxlsx::writeData(wb, "Table S8", MORT_table,
+#                    startRow = 3, startCol = 1)
+
+#openxlsx::addWorksheet(wb, "Table S9")
+#openxlsx::writeData(wb, "Table S9", "Table S9: LTi50 values and confidence intervals for males and females of all strains examined during the study.",
+#                    startRow = 1, startCol = 1)
+#openxlsx::writeData(wb, "Table S9", LTI_table,
+#                    startRow = 3, startCol = 1)
+
+saveWorkbook(wb, out_xlsx, overwrite = TRUE)
 
 out_pdf <- file.path("results", "plots", 
                      paste0("03_Phenotyping_plots_", timestamp, ".pdf"))
@@ -317,3 +316,21 @@ print(figS1 + figS2 + figS3 +
 
 dev.off()
 ###EOF
+
+f1 <- figS1 + theme(legend.position = "none",
+                   plot.title = element_blank(),
+                   plot.margin = margin(0,0,0,0))+labs(x="",title="")
+f2 <- figS2 + theme(legend.position = "none",
+                   plot.title = element_blank(),
+                   plot.margin = margin(0,0,0,0))+labs(x="",title="")
+f3 <- figS3 + theme(legend.position = "none",
+                   plot.title = element_blank(),
+                   plot.margin = margin(0,0,0,0))+labs(x="",title="")
+
+p <- f1 + f2 + f3+
+  patchwork::plot_annotation(tag_levels = "A")
+p
+
+pdf("fig1.pdf", width = 7, height = 8)
+p
+dev.off()
